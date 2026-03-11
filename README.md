@@ -31,4 +31,5 @@ YoutubeManager.kt, InstagramManager.kt, TikTokManager.kt, KakaotalkManager.kt
  - 설정한 횟수 / 시간 모두 얼마나 초과했는지 3. 4)와 분리된 추가적인 기록
 3) 실시간 알림
  - (목표 80% 달성 시): "오늘 목표치까지 단 2개 남았습니다. 여기서 멈추면 당신은 승리자!"
+
 서버 연동은 구현이 끝나면 제가 작업할테니 구현에 집중해 주시면 감사하겠습니다.
