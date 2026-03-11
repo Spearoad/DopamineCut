@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "556775554571",
+    "project_id": "dopaminecut-d7a70",
+    "storage_bucket": "dopaminecut-d7a70.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:556775554571:android:19c07b330dfd2aa49c910e",
+        "android_client_info": {
+          "package_name": "com.example.dopaminecut2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWy20Zsc28STRkL7DBlCjqpKzTqDahrGc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

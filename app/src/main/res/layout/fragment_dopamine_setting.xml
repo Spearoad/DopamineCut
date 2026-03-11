@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:id="@+id/layout_personalization_top"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="30dp">
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btn_go_to_shortform_setting"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:text="숏폼 설정 (Shortform Setting)"
+        android:backgroundTint="#4CAF50"
+        android:textSize="18sp"
+        android:layout_marginBottom="30dp"/>
+
+    <FrameLayout
+        android:id="@+id/layout_personalization_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="여기에 AI 분석 리포트가 표시될 예정입니다."
+            android:layout_gravity="center"
+            android:textColor="#757575"/>
+    </FrameLayout>
+
+</LinearLayout>
