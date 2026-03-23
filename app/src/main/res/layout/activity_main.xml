@@ -8,13 +8,13 @@
     <TextView
         android:id="@+id/tv_user_nickname"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="95dp"
+        android:background="#F5F5F5"
+        android:gravity="center"
         android:padding="20dp"
         android:text="불러오는 중..."
         android:textSize="20sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:background="#F5F5F5"/>
+        android:textStyle="bold" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/main_tab_layout"
@@ -34,21 +34,22 @@
             android:text="커뮤니티" />
     </com.google.android.material.tabs.TabLayout>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_user_settings"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        android:src="@android:drawable/ic_menu_edit"
-        app:backgroundTint="#4CAF50"
-        app:tint="#FFFFFF"
-        app:fabSize="normal" />
-
     <FrameLayout
         android:id="@+id/main_frame_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent" >
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_user_settings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="24dp"
+            android:src="@android:drawable/ic_menu_edit"
+            app:backgroundTint="#4CAF50"
+            app:fabSize="normal"
+            app:tint="#FFFFFF" />
+    </FrameLayout>
 
 
 

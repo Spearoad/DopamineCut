@@ -1,39 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#F5F5F5">
 
     <LinearLayout
-        android:id="@+id/layout_personalization_top"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginBottom="30dp">
-    </LinearLayout>
-
-    <Button
-        android:id="@+id/btn_go_to_shortform_setting"
-        android:layout_width="match_parent"
-        android:layout_height="70dp"
-        android:text="숏폼 설정 (Shortform Setting)"
-        android:backgroundTint="#4CAF50"
-        android:textSize="18sp"
-        android:layout_marginBottom="30dp"/>
-
-    <FrameLayout
-        android:id="@+id/layout_personalization_bottom"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:padding="16dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="여기에 AI 분석 리포트가 표시될 예정입니다."
-            android:layout_gravity="center"
-            android:textColor="#757575"/>
-    </FrameLayout>
+            android:text="남은 도파민"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="20dp"
+            android:textColor="#333333"/>
 
-</LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="15dp"
+            android:layout_marginBottom="12dp"
+            android:elevation="2dp">
+            <TextView
+                android:id="@+id/tv_youtube_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="YouTube 로딩 중..."
+                android:textSize="15sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#333333"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="15dp"
+            android:layout_marginBottom="12dp"
+            android:elevation="2dp">
+            <TextView
+                android:id="@+id/tv_instagram_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Instagram 로딩 중..."
+                android:textSize="15sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#333333"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="15dp"
+            android:layout_marginBottom="12dp"
+            android:elevation="2dp">
+            <TextView
+                android:id="@+id/tv_tiktok_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="TikTok 로딩 중..."
+                android:textSize="15sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#333333"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="15dp"
+            android:layout_marginBottom="25dp"
+            android:elevation="2dp">
+            <TextView
+                android:id="@+id/tv_kakaotalk_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="KakaoTalk 로딩 중..."
+                android:textSize="15sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#333333"/>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_go_to_shortform_setting"
+            android:layout_width="match_parent"
+            android:layout_height="65dp"
+            android:text="제한 설정 관리"
+            android:backgroundTint="#4CAF50"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AI 분석 리포트가 준비 중입니다."
+            android:layout_gravity="center"
+            android:textColor="#999999"
+            android:textSize="14sp"/>
+
+    </LinearLayout>
+</ScrollView>

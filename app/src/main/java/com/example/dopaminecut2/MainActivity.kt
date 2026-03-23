@@ -24,29 +24,29 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val intent = Intent(this, ShortformSettingActivity::class.java)
+        //val intent = Intent(this, ShortformSettingActivity::class.java)
         startActivity(intent)
 
-//        val currentUser = auth.currentUser
-//
-//        if (currentUser == null) {
-//            // 로그인이 안 되어 있으면 로그인 화면으로 이동
-//            val intent = Intent(this, LoginActivity::class.java)
-//            startActivity(intent)
-//            finish()
-//        } else {
-//            // 1. 로그인 성공 시 사용자 닉네임 불러와서 상단에 표시
-//            loadUserProfile(currentUser.uid)
-//
-//            // 2. 탭 레이아웃 설정 및 초기 화면(DopamineSetting) 진입
-//            setupTabs()
-//
-//            // 3. 하단 유저 설정 버튼(FAB) 연결
-//            val fabSettings = findViewById<FloatingActionButton>(R.id.fab_user_settings)
-//            fabSettings.setOnClickListener {
-//                showSettingsDialog()
-//            }
-//        }
+        val currentUser = auth.currentUser
+
+        if (currentUser == null) {
+            // 로그인이 안 되어 있으면 로그인 화면으로 이동
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+        } else {
+            // 1. 로그인 성공 시 사용자 닉네임 불러와서 상단에 표시
+            loadUserProfile(currentUser.uid)
+
+            // 2. 탭 레이아웃 설정 및 초기 화면(DopamineSetting) 진입
+            setupTabs()
+
+            // 3. 하단 유저 설정 버튼(FAB) 연결
+            val fabSettings = findViewById<FloatingActionButton>(R.id.fab_user_settings)
+            fabSettings.setOnClickListener {
+                showSettingsDialog()
+            }
+        }
     }
 
     // 사용자 설정 다이얼로그 (알림 설정 / 로그아웃)
