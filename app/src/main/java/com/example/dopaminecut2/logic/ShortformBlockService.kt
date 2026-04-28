@@ -217,13 +217,8 @@ class ShortformBlockService : AccessibilityService() {
 
 }
 
-
-
-
-
-
-//    /** ui 읽기용 코드
-//    ============================================================================================== */
+    /** ui 읽기용 코드
+    ============================================================================================== */
 //    private var windowManager: WindowManager? = null
 //    private var debugButton: Button? = null
 //    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
