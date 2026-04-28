@@ -53,7 +53,7 @@ class DopamineSetting : Fragment(R.layout.fragment_dopamine_setting) {
         val appMap = mapOf(
             "com.google.android.youtube" to view.findViewById<TextView>(R.id.tv_youtube_status),
             "com.instagram.android" to view.findViewById<TextView>(R.id.tv_instagram_status),
-            "com.zhiliaoapp.musically" to view.findViewById<TextView>(R.id.tv_tiktok_status),
+            "com.ss.android.ugc.trill" to view.findViewById<TextView>(R.id.tv_tiktok_status),
             "com.kakao.talk" to view.findViewById<TextView>(R.id.tv_kakaotalk_status)
         )
 
