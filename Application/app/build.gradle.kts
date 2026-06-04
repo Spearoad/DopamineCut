@@ -55,7 +55,9 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")      // 로그인용
     implementation("com.google.firebase:firebase-firestore") // DB용
     implementation("androidx.activity:activity-ktx:1.8.2")
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0") // 차트용
-    implementation("androidx.fragment:fragment-ktx:1.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
 }

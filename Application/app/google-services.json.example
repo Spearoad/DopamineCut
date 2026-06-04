@@ -8,7 +8,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:440075672976:android:48741219a0259e3c62a715",
+        "mobilesdk_app_id": "REPLACE_WITH_DOWNLOADED_ANDROID_APP_ID",
         "android_client_info": {
           "package_name": "com.example.dopaminecut2"
         }
@@ -16,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBSWU0XhWM15vA43fSPdm6low1gEueEBkE"
+          "current_key": "AIzaSyBc41ylE5iQ4u0tB2cOZ-jvpaieSo2Kai0"
         }
       ],
       "services": {

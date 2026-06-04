@@ -8,3 +8,5 @@
 #### 👉 **[DopamineCut 설계 요구사항 문서(DRD) 열람하기](./DRD-Documents)**
 #### 👉 **[DopamineCut 설계 명세 문서(DSD) 열람하기](./DSD-Documents)**
 #### 👉 **[DopamineCut 구현 내용 (Application) 열람하기](./Application)**
+#### 👉 **[DopamineCut 웹 커뮤니티 (게시판) 열람하기](./Community-Web)**
+#### 👉 **[Firebase 연동 가이드 (dopaminecut-community)](./FIREBASE_SETUP.md)**

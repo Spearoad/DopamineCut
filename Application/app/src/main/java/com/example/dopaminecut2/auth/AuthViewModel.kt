@@ -2,38 +2,39 @@ package com.example.dopaminecut2.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.dopaminecut2.data.model.Inventory
-import com.example.dopaminecut2.data.model.User
+import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.Date
 
 class AuthViewModel : ViewModel() {
 
-    // Firebase 인스턴스 가져오기
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
-    // 1. 로딩 상태 관리 (UI에서 프로그레스 바 표시용)
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> get() = _isLoading
 
-    // 2. 일회성 이벤트 전달 (토스트 메시지, 화면 전환 등)
     private val _uiEvent = MutableSharedFlow<String>()
     val uiEvent: SharedFlow<String> get() = _uiEvent
 
-    /**
-     * 입력값 유효성 검사 내부 함수
-     */
     private fun validateInput(email: String, pw: String): Boolean {
         if (email.isBlank() || pw.isBlank()) {
             emitEvent("이메일과 비밀번호를 모두 입력해주세요.")
+            return false
+        }
+        if (!email.contains("@")) {
+            emitEvent("올바른 이메일 형식을 입력해주세요.")
             return false
         }
         if (pw.length < 6) {
@@ -43,29 +44,22 @@ class AuthViewModel : ViewModel() {
         return true
     }
 
-    /**
-     * 로그인 요청 로직
-     */
     fun login(email: String, pw: String) {
         if (!validateInput(email, pw)) return
 
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Firebase Auth 로그인 요청 (await()로 동기식 처리)
                 auth.signInWithEmailAndPassword(email, pw).await()
-                emitEvent("LOGIN_SUCCESS") // UI 쪽에 성공 신호 전달
+                emitEvent("LOGIN_SUCCESS")
             } catch (e: Exception) {
-                emitEvent("로그인 실패: ${e.localizedMessage}")
+                emitEvent(mapAuthError(e, "로그인"))
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    /**
-     * 회원가입 및 초기 데이터 생성 로직
-     */
     fun signup(email: String, pw: String, nickname: String) {
         if (!validateInput(email, pw)) return
         if (nickname.isBlank()) {
@@ -75,36 +69,79 @@ class AuthViewModel : ViewModel() {
 
         viewModelScope.launch {
             _isLoading.value = true
+            var createdUid: String? = null
             try {
-                // 1. Firebase Auth에 유저 계정 생성
                 val authResult = auth.createUserWithEmailAndPassword(email, pw).await()
-                val uid = authResult.user?.uid ?: throw Exception("UID 생성 실패")
+                createdUid = authResult.user?.uid ?: throw IllegalStateException("UID 생성 실패")
 
-                // 2. 기획된 명세서에 맞추어 유저 초기값(DB 객체) 세팅
-                val newUser = User(
-                    userId = uid,
-                    email = email,
-                    nickname = nickname,
-                    createdAt = Date(),
-                    restrictions = emptyList(), // 차단 카테고리 초기값 (빈 배열)
-                    inventory = Inventory(poke = 0L, megaphone = 0L) // 아이템 초기값 0
+                val userData = hashMapOf(
+                    "email" to email,
+                    "nickname" to nickname,
+                    "created_at" to com.google.firebase.Timestamp.now(),
+                    "restrictions" to emptyList<String>(),
+                    "inventory" to hashMapOf(
+                        "poke" to 0L,
+                        "megaphone" to 0L
+                    )
                 )
 
-                // 3. Firestore 'users' 컬렉션에 초기 데이터 적재
-                firestore.collection("users").document(uid).set(newUser).await()
-
-                emitEvent("SIGNUP_SUCCESS") // UI 쪽에 가입 성공 신호 전달
+                firestore.collection("users").document(createdUid).set(userData).await()
+                emitEvent("SIGNUP_SUCCESS")
             } catch (e: Exception) {
-                emitEvent("회원가입 실패: ${e.localizedMessage}")
+                rollbackAuthUser(createdUid)
+                emitEvent(mapSignupError(e))
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    /**
-     * 코루틴 환경에서 이벤트를 안전하게 전송하기 위한 헬퍼 함수
-     */
+    private suspend fun rollbackAuthUser(uid: String?) {
+        if (uid == null) return
+        try {
+            val user = auth.currentUser
+            if (user != null && user.uid == uid) {
+                user.delete().await()
+            }
+        } catch (_: Exception) {
+            // Firestore만 실패한 경우 재가입을 위해 Auth 계정 삭제 시도
+        }
+    }
+
+    private fun mapSignupError(e: Exception): String {
+        if (e is FirebaseFirestoreException) {
+            return when (e.code) {
+                FirebaseFirestoreException.Code.PERMISSION_DENIED ->
+                    "회원가입 실패: Firestore 권한이 없습니다. Firebase 콘솔에서 Firestore·보안 규칙을 확인하세요."
+                FirebaseFirestoreException.Code.UNAVAILABLE ->
+                    "회원가입 실패: Firestore가 아직 생성되지 않았을 수 있습니다. 콘솔에서 Firestore 데이터베이스를 만드세요."
+                else ->
+                    "회원가입 실패 (DB): ${e.message ?: e.code.name}"
+            }
+        }
+        return mapAuthError(e, "회원가입")
+    }
+
+    private fun mapAuthError(e: Exception, action: String): String {
+        when (e) {
+            is FirebaseAuthUserCollisionException ->
+                return "$action 실패: 이미 사용 중인 이메일입니다."
+            is FirebaseAuthWeakPasswordException ->
+                return "$action 실패: 비밀번호가 너무 약합니다. 6자리 이상으로 설정하세요."
+            is FirebaseAuthInvalidCredentialsException ->
+                return "$action 실패: 이메일 또는 비밀번호 형식이 올바르지 않습니다."
+            is FirebaseAuthException -> {
+                if (e.errorCode == "ERROR_OPERATION_NOT_ALLOWED") {
+                    return "$action 실패: Firebase에서 이메일/비밀번호 로그인을 켜주세요. (Authentication → Sign-in method)"
+                }
+                return "$action 실패: ${e.message ?: e.errorCode}"
+            }
+            is FirebaseNetworkException ->
+                return "$action 실패: 인터넷 연결을 확인해주세요."
+        }
+        return "$action 실패: ${e.localizedMessage ?: e.message ?: "알 수 없는 오류"}"
+    }
+
     private fun emitEvent(message: String) {
         viewModelScope.launch {
             _uiEvent.emit(message)
