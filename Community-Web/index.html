@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DopamineCut Community</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #4ade80;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --border: #334155;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container { max-width: 800px; width: 100%; }
+
+    header { text-align: center; margin-bottom: 30px; }
+    header h1 { color: var(--primary); font-size: 2rem; margin: 0 0 8px; }
+    header p { color: var(--muted); margin: 0; font-size: 0.95rem; }
+
+    .write-section {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      resize: none;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .write-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .user-info-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .user-info-input input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+
+    .user-info-input input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    #nickInput { width: 120px; }
+    #scoreInput { width: 140px; }
+
+    button {
+      background: var(--primary);
+      color: #0f172a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.2s;
+      font-family: inherit;
+    }
+
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .feed-item {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 15px;
+      border-left: 5px solid transparent;
+      transition: 0.3s;
+    }
+
+    .rank-1 {
+      border-left-color: #fbbf24;
+      background: linear-gradient(90deg, #2d2613, #1e293b);
+    }
+    .rank-2 { border-left-color: #94a3b8; }
+    .rank-3 { border-left-color: #b45309; }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .profile-emoji {
+      font-size: 2rem;
+      background: var(--border);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .nickname { font-weight: bold; }
+
+    .post-content {
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .score-tag {
+      font-size: 0.8rem;
+      background: rgba(74, 222, 128, 0.2);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 5px;
+      margin-left: 4px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 15px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 60;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--primary);
+      padding: 13px 18px;
+      border-radius: 999px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+      transition: 0.25s;
+      font-size: 14px;
+    }
+
+    .toast.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🛡️ DopamineCut Community</h1>
+      <p>앱에서 측정한 점수로 커뮤니티의 권력을 쟁취하세요!</p>
+    </header>
+
+    <section class="write-section">
+      <textarea id="postInput" placeholder="오늘의 디톡스 경험을 공유해 주세요..."></textarea>
+      <div class="write-bottom">
+        <div class="user-info-input">
+          <input type="text" id="nickInput" placeholder="닉네임" maxlength="12" />
+          <input type="number" id="scoreInput" placeholder="도파민 점수(0~100)" min="0" max="100" />
+        </div>
+        <button id="btnPost" type="button">게시하기</button>
+      </div>
+    </section>
+
+    <div id="feedArea"></div>
+
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      push,
+      set,
+      onValue
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBc41ylE5iQ4u0tB2cOZ-jvpaieSo2Kai0",
+      authDomain: "dopaminecut-community.firebaseapp.com",
+      databaseURL: "https://dopaminecut-community-default-rtdb.firebaseio.com",
+      projectId: "dopaminecut-community",
+      storageBucket: "dopaminecut-community.firebasestorage.app",
+      messagingSenderId: "440075672976",
+      appId: "1:440075672976:web:7df1783a1c60b4d262a715",
+      measurementId: "G-RJMDXP5NHH"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const postsRef = ref(db, "community_posts");
+
+    const EMOJIS = ["🔥", "🛡️", "🌱", "💎", "👑", "⚡"];
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const nickInput = document.getElementById("nickInput");
+    const scoreInput = document.getElementById("scoreInput");
+    const postInput = document.getElementById("postInput");
+    const feedArea = document.getElementById("feedArea");
+    const btnPost = document.getElementById("btnPost");
+    const toast = document.getElementById("toast");
+
+    const defaultNick = urlParams.get("nickname") || urlParams.get("author") || "";
+    const defaultScore = urlParams.get("score");
+    const appUid = urlParams.get("uid") || "";
+
+    if (defaultNick) nickInput.value = defaultNick;
+    if (defaultScore != null && defaultScore !== "") {
+      scoreInput.value = Math.max(0, Math.min(100, Number(defaultScore) || 0));
+    }
+
+    let posts = [];
+
+    onValue(
+      postsRef,
+      (snapshot) => {
+        posts = [];
+        snapshot.forEach((child) => {
+          const data = child.val() || {};
+          posts.push({
+            id: child.key,
+            nickname: data.nickname || data.author || "익명",
+            score: Number(data.score ?? 0),
+            text: data.text || data.content || "",
+            emoji: data.emoji || "🛡️",
+            date: data.createdAt || data.date || Date.now()
+          });
+        });
+        posts.sort((a, b) => Number(b.date) - Number(a.date));
+        renderFeed();
+      },
+      (err) => {
+        console.error(err);
+        showToast("게시글을 불러오지 못했습니다. Realtime Database 규칙을 확인하세요.");
+      }
+    );
+
+    btnPost.addEventListener("click", savePost);
+
+    async function savePost() {
+      const text = postInput.value.trim();
+      const nickname = nickInput.value.trim();
+      const score = parseInt(scoreInput.value, 10);
+
+      if (!text || !nickname || Number.isNaN(score)) {
+        showToast("모든 내용을 입력해 주세요!");
+        return;
+      }
+      if (score < 0 || score > 100) {
+        showToast("도파민 점수는 0~100 사이로 입력해 주세요.");
+        return;
+      }
+
+      btnPost.disabled = true;
+      try {
+        const newRef = push(postsRef);
+        await set(newRef, {
+          nickname,
+          author: nickname,
+          score,
+          text,
+          content: text,
+          emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+          createdAt: Date.now(),
+          uid: appUid || null,
+          likes: 0,
+          comments: {}
+        });
+        postInput.value = "";
+        showToast("게시되었습니다!");
+      } catch (e) {
+        console.error(e);
+        showToast("게시 실패: DB 규칙 또는 네트워크를 확인하세요.");
+      } finally {
+        btnPost.disabled = false;
+      }
+    }
+
+    function renderFeed() {
+      if (posts.length === 0) {
+        feedArea.innerHTML = `
+          <div class="empty-state">
+            아직 게시글이 없습니다.<br />첫 디톡스 후기를 남겨 보세요!
+          </div>
+        `;
+        return;
+      }
+
+      const sortedByScore = [...posts].sort((a, b) => b.score - a.score);
+
+      feedArea.innerHTML = posts
+        .map((post) => {
+          const rankIndex = sortedByScore.findIndex((p) => p.id === post.id) + 1;
+
+          let fontSize = "1rem";
+          if (rankIndex === 1) fontSize = "2.2rem";
+          else if (rankIndex === 2) fontSize = "1.6rem";
+          else if (rankIndex === 3) fontSize = "1.3rem";
+
+          const rankClass = rankIndex <= 3 ? `rank-${rankIndex}` : "";
+          const dateStr = formatDate(post.date);
+
+          return `
+            <article class="feed-item ${rankClass}">
+              <div class="profile">
+                <div class="profile-emoji">${escapeHtml(post.emoji)}</div>
+                <div>
+                  <div class="nickname">
+                    ${escapeHtml(post.nickname)}
+                    <span class="score-tag">Score: ${post.score}</span>
+                  </div>
+                  <div style="font-size: 0.7rem; color: var(--muted);">
+                    ${rankIndex}위 · ${dateStr}
+                  </div>
+                </div>
+              </div>
+              <div class="post-content" style="font-size: ${fontSize}; font-weight: ${rankIndex <= 3 ? "bold" : "normal"};">
+                ${escapeHtml(post.text)}
+              </div>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    function formatDate(time) {
+      const ts = typeof time === "number" ? time : Date.parse(time);
+      if (!ts || Number.isNaN(ts)) return "방금 전";
+      return new Date(ts).toLocaleString("ko-KR", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("active");
+      setTimeout(() => toast.classList.remove("active"), 2000);
+    }
+
+    window.savePost = savePost;
+    window.renderFeed = renderFeed;
+  </script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">Dopaminecut2</string>
-    <!-- TODO: Remove or change this placeholder text -->
+    <string name="app_name">도파민컷</string>
+    <string name="accessibility_service_description">숏폼 시청 감지 및 사용 시간 추적을 위해 접근성 권한이 필요합니다.</string>
+    <!-- Firebase Hosting (로컬 테스트: http://10.0.2.2:5173) -->
+    <string name="community_web_base_url">https://dopaminecut-community.web.app</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

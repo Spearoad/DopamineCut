@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
@@ -15,9 +17,10 @@
         android:theme="@style/Theme.Dopaminecut2">
 
         <service
-            android:name=".logic.ShortformBlockService"
+            android:name=".service.AppBlockService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/accessibility_service_description">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
@@ -41,10 +44,7 @@
 
         <activity
             android:name=".main.MainActivity"
-            android:exported="true" >
-        </activity>
-
+            android:exported="false" />
     </application>
-
 
 </manifest>

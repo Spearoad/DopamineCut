@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "community_posts": {
+      ".read": true,
+      "$postId": {
+        ".write": true,
+        "comments": {
+          "$commentId": {
+            ".write": true
+          }
+        }
+      }
+    }
+  }
+}

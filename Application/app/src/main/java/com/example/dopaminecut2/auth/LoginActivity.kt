@@ -8,7 +8,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.dopaminecut2.databinding.ActivityLoginBinding
 import com.example.dopaminecut2.main.BaseActivity
-// import com.example.dopaminecut2.main.MainActivity // (추후 메인 화면이 만들어지면 주석 해제)
+import com.example.dopaminecut2.main.MainActivity
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 class LoginActivity : BaseActivity<ActivityLoginBinding>(ActivityLoginBinding::inflate) {
@@ -16,7 +17,10 @@ class LoginActivity : BaseActivity<ActivityLoginBinding>(ActivityLoginBinding::i
     private val viewModel: AuthViewModel by viewModels()
 
     override fun initView() {
-        // 화면 켜질 때 초기 세팅 (현재는 비워둠)
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+        }
     }
 
     override fun setupListeners() {
@@ -50,9 +54,7 @@ class LoginActivity : BaseActivity<ActivityLoginBinding>(ActivityLoginBinding::i
                     viewModel.uiEvent.collect { eventMessage ->
                         if (eventMessage == "LOGIN_SUCCESS") {
                             showToast("로그인 성공!")
-
-                            // [TODO] MainActivity 연결
-                            // startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                            startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                             finish()
                         } else {
                             showToast(eventMessage)
