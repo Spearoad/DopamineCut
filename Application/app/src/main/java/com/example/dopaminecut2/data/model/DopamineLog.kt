@@ -6,18 +6,21 @@ import java.util.Date
 
 data class DopamineLog(
     @DocumentId
-    val logId: String = "",                      // 문서 ID (자동 생성)
+    var logId: String = "",                      // 문서 ID (자동 생성)
 
-    @PropertyName("user_id")
-    val userId: String = "",
+    @get:PropertyName("user_id")
+    @set:PropertyName("user_id")
+    var userId: String = "",
 
-    val platform: String = "",
+    var platform: String = "",
 
-    @PropertyName("created_at")
-    val createdAt: Date = Date(),
+    @get:PropertyName("created_at")
+    @set:PropertyName("created_at")
+    var createdAt: Date = Date(),
 
-    val category: String = "",                   // OCR 분류 카테고리
+    var category: String = "",                   // OCR 분류 카테고리
 
-    @PropertyName("duration_sec")
-    val durationSec: Long = 0L
+    @get:PropertyName("duration_sec")
+    @set:PropertyName("duration_sec")
+    var durationSec: Long = 0L
 )

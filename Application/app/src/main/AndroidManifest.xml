@@ -15,7 +15,7 @@
         android:theme="@style/Theme.Dopaminecut2">
 
         <service
-            android:name=".logic.ShortformBlockService"
+            android:name=".service.AppBlockService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>
@@ -37,6 +37,14 @@
 
         <activity
             android:name=".auth.SignupActivity"
-            android:exported="false" />    </application>
+            android:exported="false" />
+
+        <activity
+            android:name=".main.MainActivity"
+            android:exported="true" >
+        </activity>
+
+    </application>
+
 
 </manifest>

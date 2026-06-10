@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="주간 심층 분석"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- 목표 달성일 확인 (스트릭 UI) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="내 도파민 방어 기록 (연속 달성)"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+        <CalendarView
+            android:id="@+id/calendarStreak"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"/>
+
+        <!-- 주간 숏폼 시청 추이 (Bar Chart) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="주간 숏폼 시청 횟수 추이"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/barChartWeekly"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginBottom="32dp" />
+
+        <!-- 취약 시간대 (Line Chart) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="나의 도파민 취약 시간대"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/lineChartVulnerableTime"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginBottom="32dp" />
+
+        <!-- 앱 사용 목적 (Doughnut Chart) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="앱별 일반 영상 vs 숏폼 비율"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+        <!-- MPAndroidChart에서 도넛 차트 → 파이 차트를 구멍 뚫어서 만듦 -->
+        <com.github.mikephil.charting.charts.PieChart
+            android:id="@+id/doughnutChartUsage"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginBottom="32dp" />
+
+    </LinearLayout>
+</ScrollView>

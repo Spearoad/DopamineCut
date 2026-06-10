@@ -1,6 +1,6 @@
 # DopamineCut DSD
 
-본 폴더는 'DopamineCut(도파민컷)' 프로젝트의 전체적인 설계 및 기획을 담은 DRD(Design Specification Document) 문서들을 포함하고 있습니다.
+본 폴더는 'DopamineCut(도파민컷)' 프로젝트의 전체적인 설계 및 기획을 담은 DSD(Design Specification Document) 문서들을 포함하고 있습니다.
 
 프로젝트의 상세 기획 내용은 아래 각 링크를 통해 확인하실 수 있습니다.
 

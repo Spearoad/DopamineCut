@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- 오늘의 도파민 현황 (프로그레스 바) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="오늘의 도파민 현황"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- 총 사용 시간 프로그레스 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="총 사용 시간"
+                    android:textStyle="bold"
+                    android:textColor="#4f46e5"/>
+                <TextView
+                    android:id="@+id/tvTimeStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0분 / 0분"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/pbTime"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="12dp"
+                android:progressTint="#4f46e5"
+                android:progressBackgroundTint="#E5E7EB"
+                android:max="100"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- 숏폼 시청 횟수 프로그레스 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="숏폼 시청 횟수"
+                    android:textStyle="bold"
+                    android:textColor="#ef4444"/>
+                <TextView
+                    android:id="@+id/tvCountStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0회 / 0회"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+            <ProgressBar
+                android:id="@+id/pbCount"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="12dp"
+                android:progressTint="#ef4444"
+                android:progressBackgroundTint="#E5E7EB"
+                android:max="100" />
+        </LinearLayout>
+
+        <!-- 파이 차트, 카테고리 비율 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="내 숏폼 취향"
+            android:layout_marginBottom="8dp"
+            android:textStyle="bold" />
+
+        <com.github.mikephil.charting.charts.PieChart
+            android:id="@+id/pieChartCategory"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 가로 막대 차트 (앱 사용 시간 랭킹) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="오늘 앱 사용 시간 랭킹"
+            android:layout_marginBottom="8dp"
+            android:textStyle="bold" />
+
+        <com.github.mikephil.charting.charts.HorizontalBarChart
+            android:id="@+id/barChartAppRanking"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 목표 설정 팝업창 띄우는 버튼 -->
+        <Button
+            android:id="@+id/btn_open_target_setting"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:text="앱별 목표 시간 수정하기"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+</ScrollView>

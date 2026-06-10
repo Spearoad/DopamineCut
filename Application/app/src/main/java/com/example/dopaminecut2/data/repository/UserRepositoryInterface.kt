@@ -1,5 +1,6 @@
 package com.example.dopaminecut2.data.repository
 
+import com.example.dopaminecut2.data.model.DailyStatistics
 import com.example.dopaminecut2.data.model.DopamineLog
 import com.example.dopaminecut2.data.model.User
 import kotlinx.coroutines.flow.Flow
@@ -19,7 +20,15 @@ interface UserRepositoryInterface {
     /**
      * 유저가 팝업에서 수정한 차단 카테고리 또는 목표를 동기화하는 함수
      */
-    suspend fun updateTargetSettings(userId: String, restrictions: List<String>): Result<Unit>
+    // suspend fun updateTargetSettings(userId: String, restrictions: List<String>): Result<Unit>
+
+    // 시간, 횟수도 넘길 수 있도록 선언
+    suspend fun updateTargetSettings(
+        userId: String,
+        timeLimit: Int,
+        countLimit: Int,
+        tags: List<String>
+    ): Result<Unit>
 
     /**
      * ViewTracker가 전달한 숏폼 시청 기록과 AI 카테고리 분류 결과를 서버에 업로드
@@ -38,4 +47,7 @@ interface UserRepositoryInterface {
         runTimeSec: Long,
         shortformCount: Long
     ): Result<Unit>
+
+    fun getDailyStatisticsFlow(userId: String, date: String): Flow<DailyStatistics?>
+    fun getDopamineLogsFlow(userId: String): Flow<List<DopamineLog>>
 }

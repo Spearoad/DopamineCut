@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#FFFFFF">
+
+    <!-- 수정 : 앱 목표 설정 → 도파민 목표 설정 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="도파민 목표 설정"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 수정 : 목표 사용 시간 (분) → 총 목표 사용 시간 (분) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="총 목표 사용 시간 (분)"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- 시간 입력 칸 -->
+    <EditText
+        android:id="@+id/et_time_limit"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="예: 60"
+        android:inputType="number"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 수정 : 숏폼 시청 제한 횟수 (회) → 총 숏폼 시청 제한 횟수 (회) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="총 숏폼 시청 제한 횟수 (회)"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- 횟수 입력 칸 -->
+    <EditText
+        android:id="@+id/et_count_limit"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="예: 10"
+        android:inputType="number"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- 체크박스 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="집중 페널티 태그 선택 (최대 5개)"
+        android:textColor="#D32F2F"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="선택한 카테고리의 숏폼을 보면 점수가 더 많이 깎입니다."
+        android:textSize="12sp"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- 3x3 그리드로 체크박스 9개 배치 -->
+    <GridLayout
+        android:id="@+id/grid_tags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="3"
+        android:layout_marginBottom="24dp">
+
+        <CheckBox android:id="@+id/cb_tag1" android:text="게임" android:layout_width="wrap_content" android:layout_columnWeight="1"/>
+        <CheckBox android:id="@+id/cb_tag2" android:text="유머" android:layout_width="wrap_content" android:layout_columnWeight="1"/>
+        <CheckBox android:id="@+id/cb_tag3" android:text="교육" android:layout_width="wrap_content" android:layout_columnWeight="1"/>
+        <CheckBox android:id="@+id/cb_tag4" android:text="사회" android:layout_width="wrap_content" android:layout_columnWeight="1"/>
+        <CheckBox android:id="@+id/cb_tag5" android:text="먹방" android:layout_width="wrap_content" android:layout_columnWeight="1"/>
+        <CheckBox android:id="@+id/cb_tag6" android:text="스포츠" android:layout_width="wrap_content" android:layout_columnWeight="1"/>
+        <CheckBox android:id="@+id/cb_tag7" android:text="음악" android:layout_width="wrap_content" android:layout_columnWeight="1"/>
+        <CheckBox android:id="@+id/cb_tag8" android:text="연예" android:layout_width="wrap_content" android:layout_columnWeight="1"/>
+        <CheckBox android:id="@+id/cb_tag9" android:text="기타" android:layout_width="wrap_content" android:layout_columnWeight="1"/>
+    </GridLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/btn_cancel"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="취소" />
+
+        <Button
+            android:id="@+id/btn_save"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="저장" />
+    </LinearLayout>
+</LinearLayout>

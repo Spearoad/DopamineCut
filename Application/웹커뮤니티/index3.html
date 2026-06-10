@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DopamineCut Community</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #5b5cf6;
+      --primary-dark: #4244d4;
+      --secondary: #18a999;
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --sub: #6b7280;
+      --line: #e5e7eb;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --radius: 22px;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font-family: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      font-size: 20px;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .logo-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      display: grid;
+      place-items: center;
+      color: white;
+      box-shadow: 0 10px 22px rgba(91, 92, 246, 0.32);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-box {
+      width: 260px;
+      border: 1px solid var(--line);
+      background: #f9fafb;
+      border-radius: 999px;
+      padding: 11px 15px;
+      outline: none;
+      font-size: 14px;
+    }
+
+    .search-box:focus {
+      background: white;
+      border-color: var(--primary);
+    }
+
+    .primary-btn {
+      border: 0;
+      background: var(--primary);
+      color: white;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      box-shadow: 0 10px 20px rgba(91, 92, 246, 0.24);
+    }
+
+    .primary-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    /* 확성기 전용 상단 버튼 스타일 */
+    .megaphone-btn {
+      border: 0;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      color: white;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      box-shadow: 0 10px 20px rgba(239, 68, 68, 0.24);
+    }
+
+    .megaphone-btn:hover {
+      background: linear-gradient(135deg, #d97706, #dc2626);
+    }
+
+    .hero {
+      background:
+        radial-gradient(circle at 15% 20%, rgba(91, 92, 246, 0.22), transparent 28%),
+        radial-gradient(circle at 82% 18%, rgba(24, 169, 153, 0.22), transparent 25%),
+        linear-gradient(135deg, #111827, #2d2f84 52%, #4c1d95);
+      color: white;
+    }
+
+    .hero-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 58px 22px 40px;
+      display: grid;
+      grid-template-columns: 1.4fr 0.8fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .hero h1 {
+      margin: 0 0 14px;
+      font-size: clamp(34px, 5vw, 56px);
+      line-height: 1.06;
+      letter-spacing: -1.2px;
+    }
+
+    .hero p {
+      margin: 0 0 24px;
+      color: rgba(255, 255, 255, 0.82);
+      line-height: 1.7;
+      font-size: 16px;
+      max-width: 640px;
+    }
+
+    .hero-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-link {
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      color: white;
+      text-decoration: none;
+      padding: 11px 15px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .hero-card {
+      background: rgba(255, 255, 255, 0.13);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 30px;
+      padding: 22px;
+      backdrop-filter: blur(16px);
+    }
+
+    .hero-card h2 {
+      margin: 0;
+      font-size: 19px;
+    }
+
+    .popular-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .popular-label {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .popular-list {
+      display: grid;
+      gap: 2px;
+    }
+
+    .rank-item {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .rank-item.clickable {
+      cursor: pointer;
+      border-radius: 16px;
+      padding: 12px 10px;
+      margin: 0 -10px;
+      transition: background 0.18s ease, transform 0.18s ease;
+    }
+
+    .rank-item.clickable:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateX(3px);
+    }
+
+    .rank-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.18);
+      font-weight: 900;
+    }
+
+    .rank-item strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .rank-item span {
+      display: block;
+      font-size: 12px;
+      opacity: 0.72;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 22px 70px;
+    }
+
+    .stats {
+      margin-top: -54px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      position: relative;
+      z-index: 5;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(229, 231, 235, 0.7);
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 28px;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .stat-card span {
+      color: var(--sub);
+      font-size: 14px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 310px;
+      gap: 22px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* 확성기 전용 카드 컴포넌트 하이라이트 배경 */
+    .post-card.ad-card {
+      border: 2px solid #f59e0b;
+      background: #fffbeb;
+      box-shadow: 0 16px 40px rgba(245, 158, 11, 0.12);
+    }
+
+    .category-bar {
+      padding: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-bottom: 16px;
+    }
+
+    .category-btn {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--sub);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .category-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .post-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .post-card {
+      padding: 20px;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .post-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.1);
+    }
+
+    .post-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 900;
+      background: #eef2ff;
+      color: var(--primary);
+    }
+
+    .badge.success {
+      background: #ecfdf5;
+      color: #059669;
+    }
+
+    .badge.help {
+      background: #fff7ed;
+      color: #ea580c;
+    }
+
+    .badge.tip {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .badge.free {
+      background: #f5f3ff;
+      color: #7c3aed;
+    }
+
+    /* 광고 전용 인덱스 라벨 구조 */
+    .badge.ad {
+      background: #feebc8;
+      color: #c05621;
+      border: 1px solid #fbd38d;
+    }
+
+    /* 광고 잔여 수명 실시간 측정용 뱃지 스타일 */
+    .badge.timer {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      font-family: monospace;
+    }
+
+    .post-time {
+      color: var(--sub);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .post-title {
+      margin: 0 0 9px;
+      font-size: 21px;
+      letter-spacing: -0.4px;
+    }
+
+    .post-content {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.68;
+      font-size: 15px;
+    }
+
+    .post-foot {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--sub);
+      font-size: 13px;
+    }
+
+    .author {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #c7d2fe, #ddd6fe);
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      flex: 0 0 auto;
+    }
+
+    .tier-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      margin-left: 4px;
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .action-btn {
+      border: 1px solid var(--line);
+      background: #f9fafb;
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: #4b5563;
+      font-size: 13px;
+    }
+
+    .action-btn:hover {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+    }
+
+    .comments {
+      display: none;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .comments.active {
+      display: block;
+    }
+
+    .comment {
+      background: #f8fafc;
+      border: 1px solid #eef2f7;
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .comment strong {
+      display: block;
+      font-size: 12px;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .comment-input {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .comment-input input {
+      flex: 1;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 11px 12px;
+      outline: none;
+    }
+
+    .comment-input button {
+      border: 0;
+      background: #111827;
+      color: white;
+      border-radius: 14px;
+      padding: 0 14px;
+      font-weight: 800;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: sticky;
+      top: 86px;
+    }
+
+    .side-card {
+      padding: 20px;
+    }
+
+    .side-card h3 {
+      margin: 0 0 14px;
+      font-size: 18px;
+    }
+
+    .challenge {
+      background: linear-gradient(135deg, #ecfeff, #eef2ff);
+      border: 1px solid #dbeafe;
+    }
+
+    .challenge-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .challenge-day {
+      background: white;
+      color: var(--primary);
+      font-weight: 900;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .progress {
+      height: 10px;
+      background: white;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 14px 0 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 62%;
+      background: linear-gradient(90deg, var(--secondary), var(--primary));
+      border-radius: 999px;
+    }
+
+    .side-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 11px;
+    }
+
+    .side-list li {
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.45;
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .side-list li::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      position: absolute;
+      left: 0;
+      top: 8px;
+    }
+
+    .notice {
+      background: #111827;
+      color: white;
+      border: 0;
+    }
+
+    .notice p {
+      color: rgba(255, 255, 255, 0.72);
+      line-height: 1.65;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.58);
+      z-index: 40;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal {
+      width: min(620px, 100%);
+      background: white;
+      border-radius: 28px;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+
+    .modal-head {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .close-btn {
+      border: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #f3f4f6;
+      font-size: 18px;
+    }
+
+    .modal-body {
+      padding: 22px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-weight: 800;
+      font-size: 14px;
+      margin-bottom: 7px;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 13px 14px;
+      outline: none;
+      font-size: 15px;
+      background: #f9fafb;
+    }
+
+    .field textarea {
+      min-height: 170px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: var(--primary);
+      background: white;
+    }
+
+    .modal-foot {
+      padding: 0 22px 22px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .ghost-btn {
+      border: 1px solid var(--line);
+      background: white;
+      color: #374151;
+      border-radius: 999px;
+      padding: 12px 17px;
+      font-weight: 800;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 50px 16px;
+      color: var(--sub);
+      border: 1px dashed #cbd5e1;
+      border-radius: var(--radius);
+      background: white;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 60;
+      background: #111827;
+      color: white;
+      padding: 13px 18px;
+      border-radius: 999px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+      transition: 0.25s;
+      font-size: 14px;
+    }
+
+    .toast.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .site-footer {
+      border-top: 1px solid var(--line);
+      background: white;
+      color: var(--sub);
+      padding: 28px 22px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    @media (max-width: 880px) {
+      .hero-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .search-box {
+        width: 180px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .header-inner {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .header-actions {
+        width: 100%;
+      }
+
+      .search-box {
+        flex: 1;
+        width: auto;
+      }
+
+      .primary-btn, .megaphone-btn {
+        white-space: nowrap;
+      }
+
+      .hero-inner {
+        padding-top: 42px;
+      }
+
+      .stats {
+        margin-top: -36px;
+      }
+
+      .post-foot {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="#" class="logo" onclick="resetView()">
+        <span class="logo-mark">⚡</span>
+        DopamineCut Community
+      </a>
+
+      <div class="header-actions">
+        <input
+          id="searchInput"
+          class="search-box"
+          type="search"
+          placeholder="게시글 검색"
+          oninput="renderPosts()"
+        />
+        <button class="megaphone-btn" onclick="openWriteModal(true)">📢 확성기 사용 (<span id="btnBagCount">3</span>)</button>
+        <button class="primary-btn" onclick="openWriteModal(false)">글쓰기</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <h1>짧은 자극에서 벗어나는 사람들의 커뮤니티</h1>
+        <p>
+          숏폼, SNS, 게임, 무의식적인 스크롤을 줄이고 싶은 사람들이 목표를 공유하는 공간입니다.
+          성공 인증, 실패 경험, 차단 팁, 하루 목표를 자유롭게 나눠보세요.
+        </p>
+        <div class="hero-links">
+          <a class="hero-link" href="#" onclick="setCategory('오늘의 목표')">오늘의 목표 보기</a>
+          <a class="hero-link" href="#" onclick="setCategory('성공 인증')">성공 인증 보기</a>
+          <a class="hero-link" href="#" onclick="setCategory('차단 팁')">차단 팁 보기</a>
+        </div>
+      </div>
+
+      <aside class="hero-card">
+        <div class="popular-head">
+          <h2>🔥 지금 많이 보는 글</h2>
+          <span class="popular-label">실시간 인기</span>
+        </div>
+        <div id="popularPosts" class="popular-list">
+          <div class="rank-item empty-rank">
+            <span class="rank-number">-</span>
+            <div>
+              <strong>아직 인기 글이 없습니다</strong>
+              <span>게시글이 등록되면 자동으로 표시됩니다</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <main class="container">
+    <section class="stats">
+      <div class="stat-card">
+        <strong id="totalPosts">0</strong>
+        <span>전체 게시글</span>
+      </div>
+      <div class="stat-card">
+        <strong id="successPosts">0</strong>
+        <span>성공 인증</span>
+      </div>
+      <div class="stat-card">
+        <strong id="totalComments">0</strong>
+        <span>전체 댓글</span>
+      </div>
+      <div class="stat-card">
+        <strong id="totalLikes">0</strong>
+        <span>응원 좋아요</span>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div>
+        <div class="panel category-bar">
+          <button class="category-btn active" data-category="전체" onclick="setCategory('전체')">전체</button>
+          <button class="category-btn" data-category="오늘의 목표" onclick="setCategory('오늘의 목표')">오늘의 목표</button>
+          <button class="category-btn" data-category="성공 인증" onclick="setCategory('성공 인증')">성공 인증</button>
+          <button class="category-btn" data-category="고민 상담" onclick="setCategory('고민 상담')">고민 상담</button>
+          <button class="category-btn" data-category="차단 팁" onclick="setCategory('차단 팁')">차단 팁</button>
+          <button class="category-btn" data-category="자유게시판" onclick="setCategory('자유게시판')">자유게시판</button>
+        </div>
+
+        <section id="postList" class="post-list"></section>
+      </div>
+
+      <aside class="sidebar">
+        <section class="panel side-card challenge">
+          <div class="challenge-title">
+            <h3>이번 주 챌린지</h3>
+            <span class="challenge-day">진행중</span>
+          </div>
+
+          <p style="color:#374151; line-height:1.65; margin:0 0 12px;">
+            <strong>7일 숏폼 30분 이하 챌린지</strong><br />
+            하루 숏폼 사용 시간을 30분 이하로 줄이고, 성공하면 커뮤니티에 인증글을 남겨보세요.
+          </p>
+
+          <ul class="side-list" style="margin-top:12px;">
+            <li>인증 기간: 월요일 00:00 ~ 일요일 23:59</li>
+            <li>인증 방법: 사용 시간 캡처 또는 오늘의 후기 작성</li>
+            <li>성공 기준: 하루 숏폼 사용 30분 이하</li>
+            <li>완주 조건: 7일 중 5일 이상 인증</li>
+          </ul>
+
+          <div class="progress">
+            <div class="progress-fill"></div>
+          </div>
+          <small style="color:#6b7280;">현재 참여율 62% · 매주 월요일 새 챌린지 시작</small>
+        </section>
+
+        <section class="panel side-card">
+          <h3>커뮤니티 규칙</h3>
+          <ul class="side-list">
+            <li>서로의 실패를 비난하거나 조롱하지 않기</li>
+            <li>광고, 도배, 욕설, 혐오 표현 금지</li>
+            <li>타인의 개인정보나 캡처 화면 무단 공유 금지</li>
+            <li>성공 인증은 조작 없이 실제 기록 기준으로 작성</li>
+            <li>위반 게시글은 신고 접수 후 숨김 처리될 수 있음</li>
+          </ul>
+        </section>
+
+        <section class="panel side-card notice">
+          <h3>운영 안내</h3>
+          <p>
+            DopamineCut 커뮤니티는 숏폼, SNS, 게임 등 과도한 디지털 자극을 줄이고 싶은 사용자를 위한 공간입니다.
+            게시글 and 댓글은 서버에 저장되며, 운영 정책에 맞지 않는 글은 신고 검토 후 제한될 수 있습니다.
+            중요한 문의나 오류 제보는 커뮤니티 내 신고 기능을 이용해 주세요.
+          </p>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    DopamineCut Community · 독립형 웹 커뮤니티 예시
+  </footer>
+
+  <div id="writeModal" class="modal-backdrop" onclick="closeByBackdrop(event)">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="modalTitle">게시글 작성</h2>
+        <button class="close-btn" onclick="closeWriteModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label for="authorInput">닉네임</label>
+          <input id="authorInput" type="text" placeholder="닉네임을 입력하세요" />
+        </div>
+
+        <div class="field">
+          <label for="categoryInput">카테고리</label>
+          <select id="categoryInput">
+            <option value="오늘의 목표">오늘의 목표</option>
+            <option value="성공 인증">성공 인증</option>
+            <option value="고민 상담">고민 상담</option>
+            <option value="차단 팁">차단 팁</option>
+            <option value="자유게시판">자유게시판</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="titleInput">제목</label>
+          <input id="titleInput" type="text" placeholder="제목을 입력하세요" />
+        </div>
+
+        <div class="field">
+          <label for="contentInput">내용</label>
+          <textarea id="contentInput" placeholder="내용을 입력하세요"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="ghost-btn" onclick="closeWriteModal()">취소</button>
+        <button class="primary-btn" onclick="addPost()">등록하기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">완료되었습니다.</div>
+
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+
+  import {
+    getDatabase,
+    ref,
+    push,
+    set,
+    onValue,
+    update
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDn5zZX_POnedat9kCq1SgbLJaEi-YUlNM",
+    authDomain: "dopaminecut-d7a70.firebaseapp.com",
+    databaseURL: "https://dopaminecut-d7a70-default-rtdb.firebaseio.com",
+    projectId: "dopaminecut-d7a70",
+    storageBucket: "dopaminecut-d7a70.firebasestorage.app",
+    messagingSenderId: "556775554571",
+    appId: "1:556775554571:web:4ac8cdad444f5beb9c910e",
+    measurementId: "G-RDCD93X4KY"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let currentCategory = "전체";
+  let posts = [];
+  let isMegaphoneMode = false;
+  
+  // 테스트용 확성기 인벤토리 개수 제어 변수 (0으로 변경 시 구매하지 않음 안내 노출됨)
+  let userMegaphoneCount = 3;
+  let timerIntervalId = null;
+
+  const postsRef = ref(db, "community_posts");
+
+  onValue(postsRef, (snapshot) => {
+    posts = [];
+
+    snapshot.forEach((childSnapshot) => {
+      const post = childSnapshot.val() || {};
+
+      const commentsObj = post.comments || {};
+      const comments = Object.keys(commentsObj).map((key) => ({
+        id: key,
+        ...commentsObj[key]
+      }));
+
+      posts.push({
+        id: childSnapshot.key,
+        ...post,
+        comments
+      });
+    });
+
+    // 요구사항 반영 복합 정렬 루프 알고리즘
+    posts.sort((a, b) => {
+      const now = Date.now();
+      const durationMs = 24 * 60 * 60 * 1000; // 24시간 제한 기준치
+
+      const isAdA = a.isMegaphone && (now - (a.createdAt || 0) < durationMs) ? 1 : 0;
+      const isAdB = b.isMegaphone && (now - (b.createdAt || 0) < durationMs) ? 1 : 0;
+
+      // 1순위: 만료되지 않은 확성기 광고 글을 최상단 우선 배치 (일반 글은 항상 광고글 하단 정렬)
+      if (isAdB !== isAdA) {
+        return isAdB - isAdA;
+      }
+
+      // 2순위: 둘 다 살아있는 광고 글인 경우, 가장 최근에 사용(생성)된 확성기 글이 상단 점유
+      if (isAdA === 1 && isAdB === 1) {
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      }
+
+      // 3순위: 일반 구역(혹은 기간 만료된 광고글)인 경우 당일 도파민 점수가 높은 유저 순 배치
+      const scoreA = a.userScore || 0;
+      const scoreB = b.userScore || 0;
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA;
+      }
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+
+    renderPosts();
+    renderPopularPosts();
+    updateButtonCounter();
+    startLiveTimers();
+  });
+
+  function getBadgeClass(category) {
+    if (category === "성공 인증") return "success";
+    if (category === "고민 상담") return "help";
+    if (category === "차단 팁") return "tip";
+    if (category === "자유게시판") return "free";
+    return "";
+  }
+
+  function getCategoryIcon(category) {
+    const icons = {
+      "오늘의 목표": "🎯",
+      "성공 인증": "✅",
+      "고민 상담": "💭",
+      "차단 팁": "💡",
+      "자유게시판": "💬"
+    };
+
+    return icons[category] || "📌";
+  }
+
+  // 등급 및 확성기 확장형 폰트/스타일 산출 연산 구조
+  function getUserTierStyles(score, isMegaphoneActive = false) {
+    // 요구사항 반영: 확성기를 썼고 유효 기간(24시간 내) 중이라면 점수와 무관하게 무조건 가장 크게 렌더링
+    if (isMegaphoneActive) {
+      return {
+        emoji: "📢",
+        titleFontSize: "32px",
+        contentFontSize: "18px",
+        tierName: "확성기 광고",
+        badgeStyle: "background: #fff3cd; color: #856404; border: 1px solid #ffeeba;"
+      };
+    }
+
+    if (score >= 80) {
+      return {
+        emoji: "👑",
+        titleFontSize: "26px",
+        contentFontSize: "16px",
+        tierName: "도파민 국왕",
+        badgeStyle: "background: #fef3c7; color: #d97706; border: 1px solid #fcd34d;"
+      };
+    } else if (score >= 50) {
+      return {
+        emoji: "⚔️",
+        titleFontSize: "21px",
+        contentFontSize: "15px",
+        tierName: "절제력 기사",
+        badgeStyle: "background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;"
+      };
+    } else if (score >= 25) {
+      return {
+        emoji: "🏃",
+        titleFontSize: "18px",
+        contentFontSize: "14px",
+        tierName: "평범한 평민",
+        badgeStyle: "background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;"
+      };
+    } else {
+      return {
+        emoji: "⛓️",
+        titleFontSize: "15px",
+        contentFontSize: "13px",
+        tierName: "도파민 노예",
+        badgeStyle: "background: #fee2e2; color: #dc2626; border: 1px solid #fecaca;"
+      };
+    }
+  }
+
+  function renderPosts() {
+    const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+    const postList = document.getElementById("postList");
+
+    const filtered = posts.filter(post => {
+      const matchCategory = currentCategory === "전체" || post.category === currentCategory;
+
+      const matchKeyword =
+        !keyword ||
+        String(post.title || "").toLowerCase().includes(keyword) ||
+        String(post.content || "").toLowerCase().includes(keyword) ||
+        String(post.author || "").toLowerCase().includes(keyword) ||
+        String(post.category || "").toLowerCase().includes(keyword);
+
+      return matchCategory && matchKeyword;
+    });
+
+    postList.innerHTML = "";
+
+    if (filtered.length === 0) {
+      postList.innerHTML = `
+        <div class="empty-state">
+          아직 등록된 게시글이 없습니다.
+        </div>
+      `;
+      updateStats();
+      return;
+    }
+
+    const now = Date.now();
+    const durationMs = 24 * 60 * 60 * 1000;
+
+    filtered.forEach(post => {
+      const card = document.createElement("article");
+      
+      const isAdActive = post.isMegaphone && (now - (post.createdAt || 0) < durationMs);
+      card.className = isAdActive ? "panel post-card ad-card" : "panel post-card";
+
+      const currentScore = post.userScore || 0;
+      const tier = getUserTierStyles(currentScore, isAdActive);
+
+      card.innerHTML = `
+        <div class="post-head">
+          <div>
+            <span class="badge ${getBadgeClass(post.category)}">
+              ${getCategoryIcon(post.category)} ${escapeHtml(post.category)}
+            </span>
+            ${isAdActive ? `
+              <span class="badge ad">📢 광고</span>
+              <span class="badge timer" id="timer-${post.id}" data-expire="${post.createdAt + durationMs}">⏳ 계산 중...</span>
+            ` : ''}
+          </div>
+          <span class="post-time">${formatDate(post.createdAt)}</span>
+        </div>
+
+        <h2 class="post-title" style="font-size: ${tier.titleFontSize}; font-weight: 800;">
+          ${escapeHtml(post.title)}
+        </h2>
+        <p class="post-content" style="font-size: ${tier.contentFontSize};">
+          ${escapeHtml(post.content)}
+        </p>
+
+        <div class="post-foot">
+          <div class="author">
+            <span class="avatar" style="background: #ffffff; border: 1px solid var(--line); font-size: 16px;">
+              ${tier.emoji}
+            </span>
+            <span style="font-weight: 700;">${escapeHtml(post.author || "익명")}</span>
+            <span class="tier-badge" style="${tier.badgeStyle}">${tier.tierName} ${!isAdActive ? `(${currentScore}점)` : ''}</span>
+          </div>
+
+          <div class="actions">
+            <button class="action-btn" onclick="likePost('${post.id}')">👍 ${post.likes || 0}</button>
+            <button class="action-btn" onclick="toggleComments('${post.id}')">댓글 ${post.comments.length}</button>
+            <button class="action-btn" onclick="reportPost()">신고</button>
+          </div>
+        </div>
+
+        <div id="comments-${post.id}" class="comments">
+          ${post.comments.map(comment => `
+            <div class="comment">
+              <strong>${escapeHtml(comment.author || "익명")}</strong>
+              ${escapeHtml(comment.text || "")}
+            </div>
+          `).join("")}
+
+          <div class="comment-input">
+            <input id="commentInput-${post.id}" type="text" placeholder="댓글을 입력하세요" />
+            <button onclick="addComment('${post.id}')">등록</button>
+          </div>
+        </div>
+      `;
+
+      postList.appendChild(card);
+    });
+
+    updateStats();
+  }
+
+  // 실시간 광고 제한 시간 타이머 스레드 가동 함수
+  function startLiveTimers() {
+    if (timerIntervalId) clearInterval(timerIntervalId);
+
+    timerIntervalId = setInterval(() => {
+      const timerElements = document.querySelectorAll("[id^='timer-']");
+      if (timerElements.length === 0) return;
+
+      const now = Date.now();
+      let refreshNeeded = false;
+
+      timerElements.forEach(el => {
+        const expireTime = parseInt(el.dataset.expire, 10);
+        const remainMs = expireTime - now;
+
+        if (remainMs <= 0) {
+          el.textContent = "⌛ 광고 만료됨";
+          refreshNeeded = true; 
+        } else {
+          const totalSecs = Math.floor(remainMs / 1000);
+          const secs = totalSecs % 60;
+          const totalMins = Math.floor(totalSecs / 60);
+          const mins = totalMins % 60;
+          const hours = Math.floor(totalMins / 60);
+
+          el.textContent = `⏳ ${hours}시간 ${mins}분 ${secs}초 남음`;
+        }
+      });
+
+      if (refreshNeeded) {
+        clearInterval(timerIntervalId);
+        renderPosts();
+      }
+    }, 1000);
+  }
+
+  function renderPopularPosts() {
+    const popularPosts = document.getElementById("popularPosts");
+    if (!popularPosts) return;
+
+    const rankedPosts = [...posts]
+      .sort((a, b) => {
+        const scoreA = (a.likes || 0) + ((a.comments || []).length * 2);
+        const scoreB = (b.likes || 0) + ((b.comments || []).length * 2);
+
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      })
+      .slice(0, 3);
+
+    if (rankedPosts.length === 0) {
+      popularPosts.innerHTML = `
+        <div class="rank-item empty-rank">
+          <span class="rank-number">-</span>
+          <div>
+            <strong>아직 인기 글이 없습니다</strong>
+            <span>게시글이 등록되면 자동으로 표시됩니다</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    popularPosts.innerHTML = rankedPosts.map((post, index) => `
+      <div class="rank-item clickable" onclick="focusPost('${post.id}')">
+        <span class="rank-number">${index + 1}</span>
+        <div>
+          <strong>${escapeHtml(post.title)}</strong>
+          <span>${escapeHtml(post.category)} · 좋아요 ${post.likes || 0} · 댓글 ${(post.comments || []).length}</span>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function focusPost(id) {
+    const post = posts.find((item) => item.id === id);
+    if (!post) return;
+
+    currentCategory = "전체";
+    document.getElementById("searchInput").value = post.title || "";
+
+    document.querySelectorAll(".category-btn").forEach(button => {
+      button.classList.toggle("active", button.dataset.category === "전체");
+    });
+
+    renderPosts();
+
+    const container = document.querySelector(".container");
+    if (container) {
+      window.scrollTo({
+        top: container.offsetTop - 80,
+        behavior: "smooth"
+      });
+    }
+  }
+
+  function updateStats() {
+    document.getElementById("totalPosts").textContent = posts.length;
+
+    document.getElementById("successPosts").textContent =
+      posts.filter(post => post.category === "성공 인증").length;
+
+    document.getElementById("totalComments").textContent =
+      posts.reduce((sum, post) => sum + (post.comments ? post.comments.length : 0), 0);
+
+    document.getElementById("totalLikes").textContent =
+      posts.reduce((sum, post) => sum + (post.likes || 0), 0);
+  }
+
+  function updateButtonCounter() {
+    const counterSpan = document.getElementById("btnBagCount");
+    if (counterSpan) {
+      counterSpan.textContent = userMegaphoneCount;
+    }
+  }
+
+  function setCategory(category) {
+    currentCategory = category;
+
+    document.querySelectorAll(".category-btn").forEach(button => {
+      button.classList.toggle("active", button.dataset.category === category);
+    });
+
+    renderPosts();
+
+    const container = document.querySelector(".container");
+    if (container) {
+      window.scrollTo({
+        top: container.offsetTop - 80,
+        behavior: "smooth"
+      });
+    }
+  }
+
+  function resetView() {
+    currentCategory = "전체";
+    document.getElementById("searchInput").value = "";
+
+    document.querySelectorAll(".category-btn").forEach(button => {
+      button.classList.toggle("active", button.dataset.category === "전체");
+    });
+
+    renderPosts();
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
+
+  // 매개변수를 활용하여 확성기 모드 및 일반 모드 스위칭
+  function openWriteModal(isMegaphone = false) {
+    if (isMegaphone) {
+      // 요구사항 반영: 확성기가 없을 때 모달 진입을 차단하고 경고 시스템 호출
+      if (userMegaphoneCount <= 0) {
+        showToast("❌ 구매하신 확성기 아이템이 없습니다.");
+        return; 
+      }
+      isMegaphoneMode = true;
+      document.getElementById("modalTitle").innerHTML = "📢 확성기 게시글 작성 (24시간 상단 고정 광고)";
+    } else {
+      isMegaphoneMode = false;
+      document.getElementById("modalTitle").innerHTML = "게시글 작성";
+    }
+
+    document.getElementById("writeModal").classList.add("active");
+
+    setTimeout(() => {
+      document.getElementById("titleInput").focus();
+    }, 100);
+  }
+
+  function closeWriteModal() {
+    document.getElementById("writeModal").classList.remove("active");
+  }
+
+  function closeByBackdrop(event) {
+    if (event.target.id === "writeModal") {
+      closeWriteModal();
+    }
+  }
+
+  async function addPost() {
+    const author = document.getElementById("authorInput").value.trim() || "익명";
+    const category = document.getElementById("categoryInput").value;
+    const title = document.getElementById("titleInput").value.trim();
+    const content = document.getElementById("contentInput").value.trim();
+
+    if (!title || !content) {
+      showToast("제목과 내용을 모두 입력하세요.");
+      return;
+    }
+
+    try {
+      const newPostRef = push(ref(db, "community_posts"));
+      
+      // 테스트용 가변 유저 도파민 스코어 난수 추출 (실 배포 환경 연동 시 변수 교체 타겟)
+      const mockScore = Math.floor(Math.random() * 101);
+
+      await set(newPostRef, {
+        category,
+        title,
+        content,
+        author,
+        createdAt: Date.now(),
+        likes: 0,
+        userScore: mockScore,
+        isMegaphone: isMegaphoneMode // 스키마 필드 확장 적용
+      });
+
+      if (isMegaphoneMode) {
+        userMegaphoneCount = Math.max(0, userMegaphoneCount - 1);
+        updateButtonCounter();
+        showToast("📢 확성기를 소모하여 24시간 상단 고정 광고 글을 등록했습니다!");
+      } else {
+        showToast(`게시글이 등록되었습니다. (나의 도파민 등급 점수: ${mockScore}점)`);
+      }
+
+      document.getElementById("titleInput").value = "";
+      document.getElementById("contentInput").value = "";
+
+      closeWriteModal();
+      setCategory("전체");
+    } catch (error) {
+      console.error(error);
+      showToast("게시글 등록에 실패했습니다.");
+    }
+  }
+
+  async function likePost(id) {
+    const post = posts.find((item) => item.id === id);
+    if (!post) return;
+
+    try {
+      await update(ref(db, `community_posts/${id}`), {
+        likes: (post.likes || 0) + 1
+      });
+
+      showToast("응원을 보냈습니다.");
+    } catch (error) {
+      console.error(error);
+      showToast("좋아요 처리에 실패했습니다.");
+    }
+  }
+
+  function toggleComments(id) {
+    const comments = document.getElementById(`comments-${id}`);
+
+    if (comments) {
+      comments.classList.toggle("active");
+    }
+  }
+
+  async function addComment(id) {
+    const input = document.getElementById(`commentInput-${id}`);
+    const text = input.value.trim();
+
+    if (!text) {
+      showToast("댓글 내용을 입력하세요.");
+      return;
+    }
+
+    try {
+      const commentRef = push(ref(db, `community_posts/${id}/comments`));
+
+      await set(commentRef, {
+        author: "익명",
+        text,
+        createdAt: Date.now()
+      });
+
+      input.value = "";
+      showToast("댓글이 등록되었습니다.");
+    } catch (error) {
+      console.error(error);
+      showToast("댓글 등록에 실패했습니다.");
+    }
+  }
+
+  function reportPost() {
+    showToast("신고가 접수되었습니다.");
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("active");
+
+    setTimeout(() => {
+      toast.classList.remove("active");
+    }, 1800);
+  }
+
+  function formatDate(time) {
+    if (!time) return "방금 전";
+
+    const diff = Date.now() - time;
+    const minutes = Math.floor(diff / 1000 / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (minutes < 1) return "방금 전";
+    if (minutes < 60) return `${minutes}분 전`;
+    if (hours < 24) return `${hours}시간 전`;
+    return `${days}일 전`;
+  }
+
+  function escapeHtml(text) {
+    return String(text || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      closeWriteModal();
+    }
+  });
+
+  window.openWriteModal = openWriteModal;
+  window.closeWriteModal = closeWriteModal;
+  window.closeByBackdrop = closeByBackdrop;
+  window.addPost = addPost;
+  window.likePost = likePost;
+  window.toggleComments = toggleComments;
+  window.addComment = addComment;
+  window.reportPost = reportPost;
+  window.setCategory = setCategory;
+  window.resetView = resetView;
+  window.renderPosts = renderPosts;
+  window.focusPost = focusPost;
+</script>
+</body>
+</html>

@@ -1,56 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
+    <!-- 상단 닉네임 텍스트 -->
     <TextView
         android:id="@+id/tv_user_nickname"
         android:layout_width="match_parent"
-        android:layout_height="95dp"
+        android:layout_height="wrap_content"
         android:background="#F5F5F5"
         android:gravity="center"
         android:padding="20dp"
         android:text="불러오는 중..."
         android:textSize="20sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/main_tab_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:tabIndicatorColor="#4CAF50"
-        app:tabSelectedTextColor="#4CAF50">
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="도파민 설정" />
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="커뮤니티" />
-    </com.google.android.material.tabs.TabLayout>
-
-    <FrameLayout
+    <!-- 프래그먼트(화면)가 교체되며 들어갈 빈 공간 -->
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/main_frame_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_user_nickname"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_user_settings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="24dp"
-            android:src="@android:drawable/ic_menu_edit"
-            app:backgroundTint="#4CAF50"
-            app:fabSize="normal"
-            app:tint="#FFFFFF" />
-    </FrameLayout>
+    <!-- 하단 네비게이션 바 -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:menu="@menu/menu_bottom_nav"
+        app:labelVisibilityMode="labeled"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
-
-
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
