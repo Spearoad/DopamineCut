@@ -24,6 +24,7 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.utils.ColorTemplate
 import kotlinx.coroutines.launch
 
+/** 차트와 프로그레스 바 그리기, 홈 팝업 UI 및 전체적인 작동의 실시간 변화 */
 class HomeFragment : Fragment() {
 
     // binding 객체

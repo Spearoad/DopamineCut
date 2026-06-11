@@ -13,6 +13,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.dopaminecut2.databinding.DialogTargetSettingBinding
 import kotlinx.coroutines.launch
 
+
+/** 홈 화면, 앱별 목표 시간 수정 화면의 전체적인 기능 */
 // 다이얼로그로 띄우기 위해 DialogFragment 상속.
 class TargetSettingDialog : DialogFragment() {
 
@@ -95,7 +97,7 @@ class TargetSettingDialog : DialogFragment() {
                         Toast.makeText(requireContext(), "목표가 정상적으로 저장되었습니다.", Toast.LENGTH_SHORT).show()
                         dismiss() // 성공하면 팝업 닫기
                     } else {
-                        // 40% 초과 등 에러면 팝업 안 닫고 토스트만 띄우기
+                        // 60% 초과 등 에러면 팝업 안 닫고 토스트만 띄우기
                         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
                     }
                 }

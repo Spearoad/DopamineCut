@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import com.github.mikephil.charting.formatter.ValueFormatter
 
+/** 차트와 그래프 그리기, 통계 팝업 UI 및 전체적인 작동의 실시간 변화 */
 class StatsFragment : Fragment() {
 
     // binding
