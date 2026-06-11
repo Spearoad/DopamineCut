@@ -116,29 +116,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val stats = _dailyStats.value
 
-            // 모든 플랫폼의 하루 사용 시간을 모두 더함 (초 단위)
+            // 시간, 횟수 모두 합산
             var totalUsedSec = 0L
+            var totalCount = 0L
             stats?.appUsage?.values?.forEach { appUsage ->
                 totalUsedSec += appUsage.runTimeSec
+                totalCount += appUsage.shortformCount
             }
 
-            // 60% 검사를 초(Second) 단위로 정밀하게 계산
+            // 60% 기준선 계산 (시간, 횟수)
             val maxAllowedUsedSec = (timeLimitMin * 60) * 0.6
+            val maxAllowedCount = countLimit * 0.6
 
-            if (totalUsedSec > maxAllowedUsedSec) {
-                // 몇 분 몇 초 썼는지 텍스트로 변환
+            // 0이 아닐 때만 60% 초과 검사
+            val isTimeExceeded = timeLimitMin > 0 && totalUsedSec > maxAllowedUsedSec
+            val isCountExceeded = countLimit > 0 && totalCount > maxAllowedCount
+
+            if (isTimeExceeded) {
                 val usedMin = totalUsedSec / 60
                 val usedSec = totalUsedSec % 60
+                _targetSaveEvent.emit("이미 ${usedMin}분 ${usedSec}초를 사용하여 시간 목표 60%를 초과했습니다.")
+                return@launch
+            }
 
-                _targetSaveEvent.emit("이미 ${usedMin}분 ${usedSec}초를 사용하여 하루 목표 60%를 초과했습니다!")
+            if (isCountExceeded) {
+                _targetSaveEvent.emit("이미 ${totalCount}회를 시청하여 횟수 목표 60%를 초과했습니다.")
                 return@launch
             }
 
             try {
                 // firebase DB 연동
                 repository.updateTargetSettings(currentUserId, timeLimitMin, countLimit, selectedTags)
-                // DB 저장 성공 시, 화면의 목표 시간 즉시 변경
+
+                // DB 저장 성공 시, 화면의 목표 시간과 횟수를 즉시 변경
                 _currentTargetMin.value = timeLimitMin
+                _currentTargetCount.value = countLimit
+
                 _targetSaveEvent.emit("TARGET_SAVE_SUCCESS")
             } catch (e: Exception) {
                 _targetSaveEvent.emit("저장 실패: ${e.localizedMessage}")

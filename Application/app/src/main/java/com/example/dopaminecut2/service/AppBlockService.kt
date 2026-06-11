@@ -11,6 +11,7 @@ import com.example.dopaminecut2.data.repository.UserRepository
 import com.example.dopaminecut2.logic.ViewTracker
 import com.example.dopaminecut2.logic.manager.*
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -36,6 +37,7 @@ class AppBlockService : AccessibilityService() {
     private var targetCount = 0L
     private var currentUsedSec = 0L
     private var currentShortformCount = 0L
+    private var currentAppStartTime = 0L // 앱 켠 시간 기억하기
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -100,8 +102,20 @@ class AppBlockService : AccessibilityService() {
         val newAppManager = appManagers[packageName]
 
         if (newAppManager != currentAppManager) {
+            if (currentAppManager != null && currentAppStartTime > 0) {
+                val totalAppUsedSec = (System.currentTimeMillis() - currentAppStartTime) / 1000
+                if (totalAppUsedSec > 0) {
+                    saveGeneralTimeToFirebase(currentAppManager!!.platformName, totalAppUsedSec)
+                }
+            }
+
             currentAppManager = newAppManager
             viewTracker.onScreenChanged(false, null, false, "")
+
+            // 새로 켠 앱의 타이머 시작
+            if (currentAppManager != null) {
+                currentAppStartTime = System.currentTimeMillis()
+            }
         }
 
         if (currentAppManager == null) return
@@ -166,6 +180,29 @@ class AppBlockService : AccessibilityService() {
             } catch (e: Exception) {
                 Log.e("AppBlockService", "Firebase 저장 실패", e)
             }
+        }
+    }
+
+    // 총 사용 시간만 파이어베이스에 올리는 함수
+    private fun saveGeneralTimeToFirebase(platform: String, totalUsedSec: Long) {
+        serviceScope.launch {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+            val todayDate = SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
+
+            val documentId = "${userId}_${todayDate}"
+            val updates = hashMapOf<String, Any>(
+                "user_id" to userId,
+                "date" to todayDate,
+                "app_usage" to hashMapOf(
+                    platform.lowercase() to hashMapOf(
+                        // 숏폼 관련은 제외, 총 사용 시간만 누적
+                        "run_time_sec" to FieldValue.increment(totalUsedSec)
+                    )
+                )
+            )
+            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("daily_statistics").document(documentId)
+                .set(updates, com.google.firebase.firestore.SetOptions.merge())
         }
     }
 

@@ -34,10 +34,10 @@ abstract class BaseActivity<T : ViewBinding>(
     /** 화면 기본 세팅을 수행하는 함수 (자식 클래스에서 구현하기) */
     abstract fun initView()
 
-    /** 버튼 클릭 등 이벤트를 세팅 (선택 사항) */
+    /** 버튼 클릭 등 이벤트를 세팅 */
     open fun setupListeners() {}
 
-    /** ViewModel의 데이터를 감시(Observe)하는 함수 (선택 사항) */
+    /** ViewModel의 데이터를 감시(Observe)하는 함수 */
     open fun observeViewModel() {}
 
     /** * Toast 메시지 띄우기 함수
