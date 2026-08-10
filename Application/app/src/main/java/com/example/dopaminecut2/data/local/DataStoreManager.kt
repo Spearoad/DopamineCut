@@ -20,7 +20,7 @@ class DataStoreManager(private val context: Context) {
      */
     suspend fun saveRestrictionsLocally(restrictions: List<String>) {
         context.dataStore.edit { preferences ->
-            // DataStore는 Set 형태를 지원하므로 List를 Set으로 변환하여 저장
+            // DataStore는 Set 형태를 지원하므로 List를 Set으로 변환하여 저장.
             preferences[RESTRICTIONS_KEY] = restrictions.toSet()
         }
     }
