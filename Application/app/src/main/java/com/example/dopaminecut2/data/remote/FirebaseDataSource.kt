@@ -11,9 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
-class FirebaseDataSource(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-) {
+class FirebaseDataSource(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
     // 유저 정보 조회
     suspend fun fetchUser(userId: String): User {
         val snapshot = firestore.collection("users").document(userId).get().await()
