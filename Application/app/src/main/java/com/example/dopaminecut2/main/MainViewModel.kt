@@ -77,7 +77,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _currentTargetMin.value = user.targetTimeMin
                     _currentTargetCount.value = user.targetCount
                 }
-            } catch (_: Exception) { }
+                } catch (_: Exception) { }
         }
 
         // 오늘 날짜를 "YYYYMMDD" 형태(예: "20260608")로 생성함
@@ -119,9 +119,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // 시간, 횟수 모두 합산
             var totalUsedSec = 0L
             var totalCount = 0L
-            stats?.appUsage?.values?.forEach { appUsage ->
-                totalUsedSec += appUsage.runTimeSec
-                totalCount += appUsage.shortformCount
+            stats?.appUsage?.values?.forEach { singleAppUsage ->
+                totalUsedSec += singleAppUsage.runTimeSec
+                totalCount += singleAppUsage.shortformCount
             }
 
             // 60% 기준선 계산 (시간, 횟수)
