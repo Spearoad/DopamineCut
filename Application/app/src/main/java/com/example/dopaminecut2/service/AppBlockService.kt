@@ -40,6 +40,8 @@ import com.example.dopaminecut2.logic.shortform.ShortformSessionTracker
 import com.example.dopaminecut2.logic.shortform.ShortformSessionCheckpoint
 import com.example.dopaminecut2.logic.shortform.VideoIdentitySessionResolver
 import com.example.dopaminecut2.logic.shortform.IdentityQuality
+import com.example.dopaminecut2.logic.shortform.InstagramOnDeviceContentClassifier
+import com.example.dopaminecut2.logic.shortform.InstagramUiClass
 import com.example.dopaminecut2.logic.shortform.YoutubeOnDeviceContentClassifier
 import com.example.dopaminecut2.session.ServiceSessionManager
 import com.example.dopaminecut2.statistics.UsageClassification
@@ -93,6 +95,7 @@ class AppBlockService : AccessibilityService() {
     private lateinit var viewTracker: ShortformSessionTracker
     private lateinit var ocrProcessor: OCRProcessor
     private var youtubeContentClassifier: YoutubeOnDeviceContentClassifier? = null
+    private var instagramContentClassifier: InstagramOnDeviceContentClassifier? = null
     private lateinit var batchClassifier: BatchContentClassifier
     private val classificationQueue = ClassificationBatchQueue()
     private val ocrTextSanitizer = OcrContentTextSanitizer()
@@ -209,6 +212,15 @@ class AppBlockService : AccessibilityService() {
         }.onFailure { error ->
             Log.e(TAG, "YouTube CV 모델 초기화 실패: 콘텐츠를 UNKNOWN으로 유지합니다.", error)
         }.getOrNull()
+
+        instagramContentClassifier = runCatching {
+            InstagramOnDeviceContentClassifier(applicationContext)
+        }.onSuccess {
+            Log.i(TAG, "✅ Instagram CV 모델 메모리 로드 및 무결성 검증 성공!")
+        }.onFailure { error ->
+            Log.e(TAG, "❌ Instagram CV 모델 초기화 실패: 콘텐츠를 UNKNOWN으로 유지합니다.", error)
+        }.getOrNull()
+
         viewTracker = ShortformSessionTracker(
             clockMs = monotonicClock::nowMillis,
             onCountDelta = ::onViewCountDelta,
@@ -441,22 +453,95 @@ class AppBlockService : AccessibilityService() {
             Log.d("YoutubeIdentityDiagnostic", "creator=${identity.creator}; title=${identity.title}; key=$contentKey")
         }
 
-        if (manager.platform != SupportedPlatform.YOUTUBE) {
-            contentKindJob?.cancel()
-            currentContentKey = contentKey
-            currentContentKind = if (manager.isAdContent(currentSnapshot)) {
-                ShortformContentKind.AD
-            } else {
-                ShortformContentKind.NORMAL
+        when (manager.platform) {
+            // 1. 인스타그램일 때: 우리가 만든 ONNX AI 모델로 화면 판별
+            SupportedPlatform.INSTAGRAM -> {
+                if (contentKey != currentContentKey) {
+                    currentContentKey = contentKey
+                    currentContentKind = ShortformContentKind.UNKNOWN
+                    contentKindConfirmation.reset()
+                    classifyInstagramContent(contentKey)
+                } else if (currentContentKind != ShortformContentKind.UNKNOWN) {
+                    viewTracker.onScreenChanged(true, SupportedPlatform.INSTAGRAM, contentKey, currentContentKind)
+                } else if (contentKindJob?.isActive != true) {
+                    classifyInstagramContent(contentKey)
+                }
+                return
             }
-            viewTracker.onScreenChanged(true, manager.platform, contentKey, currentContentKind)
-            return
+
+            // 2. 유튜브일 때: 아래쪽의 기존 유튜브 전용 코드를 그대로 실행하도록 통과
+            SupportedPlatform.YOUTUBE -> Unit
+
+            // 3. 카카오톡(기타)일 때: 기존처럼 텍스트로만 광고 여부 판별 후 종료
+            else -> {
+                contentKindJob?.cancel()
+                currentContentKey = contentKey
+                currentContentKind = if (manager.isAdContent(currentSnapshot)) {
+                    ShortformContentKind.AD
+                } else {
+                    ShortformContentKind.NORMAL
+                }
+                viewTracker.onScreenChanged(true, manager.platform, contentKey, currentContentKind)
+                return
+            }
         }
 
         if (contentKey != currentContentKey) {
             beginYoutubeContent(contentKey)
         } else if (currentContentKind != ShortformContentKind.UNKNOWN) {
             viewTracker.onScreenChanged(true, manager.platform, contentKey, currentContentKind)
+        }
+    }
+
+    private fun classifyInstagramContent(contentKey: String?) {
+        val model = instagramContentClassifier ?: return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        val generation = screenGeneration
+        contentKindJob?.cancel()
+        contentKindJob = serviceScope.launch {
+            delay(CONTENT_SETTLE_MS)
+            val bitmap = takeScreenshotBitmap() ?: return@launch
+            val inferenceStarted = monotonicClock.nowMillis()
+            val prediction = try {
+                model.classify(bitmap)
+                    .onFailure { error -> Log.w(TAG, "Instagram CV 추론 실패", error) }
+                    .getOrNull()
+            } finally {
+                bitmap.recycle()
+            } ?: return@launch
+
+            if (!serviceActive || generation != screenGeneration ||
+                currentAppManager?.platform != SupportedPlatform.INSTAGRAM) return@launch
+
+            // CV 모델이 안전 구역(FEED_SEARCH, PROFILE_DM, STORY)으로 판별하면 숏폼 집계 중단
+            if (prediction.uiClass.isSafeNonReelScreen || prediction.uiClass == InstagramUiClass.UNKNOWN) {
+                Log.d(
+                    TAG,
+                    "Instagram 안전 구역/비릴스 판정: uiClass=${prediction.uiClass}, " +
+                            "conf=${"%.3f".format(prediction.confidence)} -> 시청 집계 제외"
+                )
+                currentContentKind = ShortformContentKind.AD // 같은 화면에서 불필요한 재캡처 반복 방지
+                viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
+                return@launch
+            }
+
+            // 접근성 텍스트에서 '광고/협찬'이 발견되었거나 CV 모델이 REEL_AD로 판별하면 AD 처리
+            val explicitAd = currentAppManager?.isAdContent(currentSnapshot) == true
+            val resolvedKind = if (explicitAd) ShortformContentKind.AD else prediction.contentKind
+            currentContentKind = resolvedKind
+
+            viewTracker.onScreenChanged(
+                isShortform = resolvedKind == ShortformContentKind.NORMAL,
+                platform = SupportedPlatform.INSTAGRAM,
+                contentKey = contentKey,
+                contentKind = resolvedKind
+            )
+            Log.d(
+                TAG,
+                "Instagram 콘텐츠 판정: uiClass=${prediction.uiClass}, resolved=$resolvedKind " +
+                        "(explicitAd=$explicitAd, conf=${"%.3f".format(prediction.confidence)}, " +
+                        "latencyMs=${monotonicClock.nowMillis() - inferenceStarted}, key=${contentKey?.take(12)})"
+            )
         }
     }
 
@@ -1275,6 +1360,7 @@ class AppBlockService : AccessibilityService() {
         usageWrites.close()
         if (::ocrProcessor.isInitialized) ocrProcessor.close()
         youtubeContentClassifier?.close()
+        instagramContentClassifier?.close()
         onboardingObservationJob?.cancel()
         tickerJob?.cancel()
         serviceScope.cancel()

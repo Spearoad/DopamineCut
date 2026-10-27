@@ -1,0 +1,99 @@
+{
+  "model_name": "instagram_shortform_state_mobilenetv3_small",
+  "version": 1,
+  "sha256": "43670a8fb0abedd14a321132d64d0b6efb95500566f00a1274238156b541513e",
+  "labels": [
+    "REEL_NORMAL",
+    "REEL_AD",
+    "FEED_SEARCH",
+    "PROFILE_DM",
+    "STORY"
+  ],
+  "input_name": "screen",
+  "input_shape": [
+    1,
+    3,
+    320,
+    320
+  ],
+  "output_name": "logits",
+  "output_shape": [
+    1,
+    5
+  ],
+  "validation_accuracy": 0.9795,
+  "validation_macro_f1": 0.9716,
+  "preprocessing": {
+    "ui_view_mode": "ui_tiles_v1",
+    "experiment": "whole_ui_v1",
+    "layout": "NCHW",
+    "color": "RGB",
+    "tile_resize": "fit_bilinear",
+    "tile_padding_rgb": [
+      0,
+      0,
+      0
+    ],
+    "imagenet_mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "imagenet_std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "roi_tiles": [
+      {
+        "source_ratio": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "destination_px": [
+          0,
+          0,
+          160,
+          320
+        ]
+      },
+      {
+        "source_ratio": [
+          0.0,
+          0.6,
+          1.0,
+          0.85
+        ],
+        "destination_px": [
+          160,
+          0,
+          320,
+          160
+        ]
+      },
+      {
+        "source_ratio": [
+          0.0,
+          0.82,
+          1.0,
+          0.97
+        ],
+        "destination_px": [
+          160,
+          160,
+          320,
+          320
+        ]
+      }
+    ]
+  },
+  "decision_thresholds": {
+    "REEL_NORMAL": 0.65,
+    "REEL_AD": 0.75,
+    "FEED_SEARCH": 0.7,
+    "PROFILE_DM": 0.7,
+    "STORY": 0.7
+  }
+}
