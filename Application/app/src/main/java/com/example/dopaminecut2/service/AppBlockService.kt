@@ -448,6 +448,10 @@ class AppBlockService : AccessibilityService() {
             updateInstagramTracking(manager)
             return
         }
+        if (manager is KakaotalkManager) {
+            updateKakaotalkTracking(manager)
+            return
+        }
 
         val detection = manager.detectShortformScreen(currentSnapshot)
         val previousScreenState = currentScreenState
@@ -632,6 +636,48 @@ class AppBlockService : AccessibilityService() {
         }
     }
 
+    private fun updateKakaotalkTracking(manager: KakaotalkManager) {
+        val decision = manager.observeTracking(currentSnapshot, monotonicClock.nowMillis())
+        currentScreenState = when {
+            !decision.retain -> manager.detectShortformScreen(currentSnapshot).state
+            decision.reason == "PLAYER_OVERLAY" -> ShortformScreenState.OVERLAY
+            decision.paused -> ShortformScreenState.CANDIDATE
+            else -> ShortformScreenState.INSIDE
+        }
+        currentIsShortform = decision.retain && !decision.paused
+        currentContentKind = if (decision.retain) ShortformContentKind.NORMAL else ShortformContentKind.UNKNOWN
+
+        if (!decision.retain) {
+            val candidateKey = decision.candidateKey
+            if (candidateKey != null) {
+                // Preserve entry time while the same candidate settles; UNKNOWN is not counted.
+                viewTracker.beginProvisional(SupportedPlatform.KAKAOTALK, candidateKey)
+                currentContentKey = candidateKey
+            } else {
+                viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
+                currentContentKey = null
+            }
+            return
+        }
+
+        val key = decision.contentKey ?: return
+        if (decision.switched || key != currentContentKey) {
+            screenGeneration++
+            clearLatestOcr()
+            currentContentKey = key
+        }
+        val provisionalSessionId = viewTracker.activeViewSessionId()?.takeIf { viewTracker.isProvisional() }
+        if (provisionalSessionId != null) {
+            viewTracker.resolveProvisional(
+                expectedSessionId = provisionalSessionId,
+                kind = ShortformContentKind.NORMAL,
+                contentKey = key
+            )
+        }
+        viewTracker.onScreenChanged(true, SupportedPlatform.KAKAOTALK, key, ShortformContentKind.NORMAL)
+        viewTracker.setPaused(decision.paused)
+    }
+
     private fun beginYoutubeContent(contentKey: String) {
         Log.d(TAG, "YouTube 시청 세션 전환: ${currentContentKey?.take(10)} -> ${contentKey.take(10)}")
         viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
@@ -797,6 +843,7 @@ class AppBlockService : AccessibilityService() {
 
     private fun stopShortformTracking() {
         (appManagers[SupportedPlatform.INSTAGRAM.packageName] as? InstagramManager)?.resetTracking()
+        (appManagers[SupportedPlatform.KAKAOTALK.packageName] as? KakaotalkManager)?.resetTracking()
 
         youtubeLayoutKey = null
         layoutValidationPending = false
