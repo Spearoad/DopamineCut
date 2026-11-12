@@ -1,0 +1,22 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Dopaminecut2" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/ui_primary</item>
+        <item name="colorSecondary">@color/ui_primary</item>
+        <item name="colorSurface">@color/ui_surface</item>
+        <item name="colorOnSurface">@color/ui_text_primary</item>
+        <item name="colorOutline">@color/ui_outline</item>
+        <item name="android:colorBackground">@color/ui_background</item>
+        <item name="android:navigationBarColor">@color/ui_surface</item>
+    </style>
+
+    <style name="Theme.DopamineCut" parent="Theme.Material3.Light.NoActionBar">
+        <!-- 기존 색상 세팅 유지... -->
+
+        <!-- 앱 전역 기본 폰트 설정 -->
+        <item name="android:fontFamily">@font/pretendard</item>
+        <item name="fontFamily">@font/pretendard</item>
+    </style>
+
+    <style name="Theme.Dopaminecut2" parent="Base.Theme.Dopaminecut2" />
+</resources>
