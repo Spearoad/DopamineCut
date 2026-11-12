@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- 기본 굵기 -->
+    <font app:fontStyle="normal" app:fontWeight="400" app:font="@font/pretendard_regular" />
+    <!-- 중간 굵기 -->
+    <font app:fontStyle="normal" app:fontWeight="500" app:font="@font/pretendard_medium" />
+    <!-- 굵은 글씨 -->
+    <font app:fontStyle="normal" app:fontWeight="700" app:font="@font/pretendard_bold" />
+</font-family>
