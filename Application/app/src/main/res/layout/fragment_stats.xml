@@ -1,66 +1,238 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="16dp" android:background="@color/ui_background">
-    <TextView android:id="@+id/tab_title" style="@style/Widget.DopamineCut.TabTitle" android:text="@string/stats_title" />
-    <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/period_group" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" app:singleSelection="true" app:selectionRequired="true" app:checkedButton="@id/btn_period_7_days">
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_period_today" style="@style/Widget.DopamineCut.StatsFilter" android:text="@string/period_today" />
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_period_7_days" style="@style/Widget.DopamineCut.StatsFilter" android:text="@string/period_7_days" />
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_period_30_days" style="@style/Widget.DopamineCut.StatsFilter" android:text="@string/period_30_days" />
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_period_custom" style="@style/Widget.DopamineCut.StatsFilter" android:text="@string/period_custom" />
-</com.google.android.material.button.MaterialButtonToggleGroup>
-    <TextView android:id="@+id/tv_range" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-    <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/platform_group" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" app:singleSelection="true" app:selectionRequired="true" app:checkedButton="@id/btn_platform_all">
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_platform_all" style="@style/Widget.DopamineCut.StatsFilter" android:text="전체" />
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_platform_youtube" style="@style/Widget.DopamineCut.StatsFilter" android:text="유튜브" />
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_platform_instagram" style="@style/Widget.DopamineCut.StatsFilter" android:text="인스타" />
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_platform_kakao" style="@style/Widget.DopamineCut.StatsFilter" android:text="카카오톡" />
-</com.google.android.material.button.MaterialButtonToggleGroup>
-    <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/section_group" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" app:singleSelection="true" app:selectionRequired="true" app:checkedButton="@id/btn_section_usage">
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_section_usage" style="@style/Widget.DopamineCut.StatsFilter" android:text="사용량" />
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_section_content" style="@style/Widget.DopamineCut.StatsFilter" android:text="콘텐츠" />
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_section_goals" style="@style/Widget.DopamineCut.StatsFilter" android:text="목표 변화" />
-</com.google.android.material.button.MaterialButtonToggleGroup>
-    <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/metric_group" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" app:singleSelection="true" app:selectionRequired="true" app:checkedButton="@id/btn_metric_time">
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_metric_time" style="@style/Widget.DopamineCut.StatsFilter" android:text="@string/metric_time" />
-<com.google.android.material.button.MaterialButton android:id="@+id/btn_metric_count" style="@style/Widget.DopamineCut.StatsFilter" android:text="영상 수" />
-</com.google.android.material.button.MaterialButtonToggleGroup>
-    <ProgressBar android:id="@+id/progress_loading" android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="center_horizontal" android:visibility="gone" />
-    <ScrollView android:id="@+id/details_scroll" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingBottom="12dp">
-            <LinearLayout android:id="@+id/state_group" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
-                <TextView android:id="@+id/tv_state_message" style="@style/Widget.DopamineCut.StatsBody" android:accessibilityLiveRegion="polite" />
-                <com.google.android.material.button.MaterialButton android:id="@+id/btn_retry" style="@style/Widget.DopamineCut.PrototypeOutline" android:text="@string/retry" android:textSize="12sp" android:visibility="gone" />
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ui_background"
+    android:padding="16dp">
+
+    <!-- 화면 타이틀 유지 -->
+    <TextView
+        android:id="@+id/tab_title"
+        style="@style/Widget.DopamineCut.TabTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/stats_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- 1. 최상위 뷰 (메인 탭): section_group을 TabLayout으로 변경 -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_main_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/tab_title"
+        app:tabIndicatorColor="@color/ui_primary"
+        app:tabMode="fixed"
+        app:tabSelectedTextColor="@color/ui_primary">
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="사용량" />
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="콘텐츠" />
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="목표 변화" />
+    </com.google.android.material.tabs.TabLayout>
+
+    <!-- 2. 기간 필터 (드롭다운 버튼): period_group을 TextView로 변경 -->
+    <!-- Kotlin 코드에서 이 뷰에 setOnClickListener를 달아 BottomSheetDialog를 띄우도록 수정해야 합니다. -->
+    <TextView
+        android:id="@+id/btn_period_dropdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="@string/period_7_days"
+        android:textColor="@color/ui_primary"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/scroll_platform_chips"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/scroll_platform_chips" />
+
+    <!-- 3. 대상 앱 선택 (가로 스크롤 필터 칩): platform_group을 ChipGroup으로 변경 -->
+    <HorizontalScrollView
+        android:id="@+id/scroll_platform_chips"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="8dp"
+        android:scrollbars="none"
+        app:layout_constraintEnd_toStartOf="@id/btn_period_dropdown"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tab_main_section">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_platform"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_platform_all"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="전체" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_platform_youtube"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="유튜브" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_platform_instagram"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="인스타" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_platform_kakao"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="카카오톡" />
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
+    <!-- 기간 안내 텍스트 -->
+    <TextView
+        android:id="@+id/tv_range"
+        style="@style/Widget.DopamineCut.StatsBody"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="11sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/scroll_platform_chips" />
+
+    <!-- 4. 하위 뷰어 (시간/영상 수 토글): metric_group 유지 및 우측 정렬 -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/metric_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:checkedButton="@id/btn_metric_time"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_range"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_metric_time"
+            style="@style/Widget.DopamineCut.StatsFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/metric_time" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_metric_count"
+            style="@style/Widget.DopamineCut.StatsFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="영상 수" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <!-- 에러 및 재시도 상태 레이아웃 (PERMISSION_DENIED 처리용) -->
+    <LinearLayout
+        android:id="@+id/state_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/metric_group">
+
+        <TextView
+            android:id="@+id/tv_state_message"
+            style="@style/Widget.DopamineCut.StatsBody"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:text="데이터를 불러오려면 접근 권한이 필요해요."
+            android:textAlignment="center" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_retry"
+            style="@style/Widget.DopamineCut.PrototypeOutline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/retry"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progress_loading"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/metric_group" />
+
+    <!-- 차트 및 상세 내용이 들어가는 스크롤 영역 (기존 코드 그대로 유지) -->
+    <ScrollView
+        android:id="@+id/details_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/metric_group">
+
+        <LinearLayout
+            android:id="@+id/content_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="12dp">
+
+            <!-- 기존 panel_usage, panel_content, panel_goals 레이아웃 그대로 복사 -->
+            <LinearLayout android:id="@+id/panel_usage" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                <TextView android:id="@+id/tv_summary_basis" style="@style/Widget.DopamineCut.StatsBody" />
+                <LinearLayout android:id="@+id/summary_cards" style="@style/Widget.DopamineCut.StatsCard" android:orientation="horizontal" />
+                <TextView android:id="@+id/tv_totals" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
+                <TextView android:id="@+id/tv_comparison" style="@style/Widget.DopamineCut.StatsBody" android:textColor="@color/ui_primary" />
+                <TextView android:id="@+id/tv_daily_title" style="@style/Widget.DopamineCut.StatsTitle" android:text="날짜별 변화" />
+                <com.github.mikephil.charting.charts.BarChart android:id="@+id/chart_daily" android:layout_width="match_parent" android:layout_height="150dp" />
+                <TextView style="@style/Widget.DopamineCut.StatsBody" android:text="막대를 누르면 해당 날짜의 기록을 볼 수 있어요." android:textSize="11sp" />
+                <LinearLayout android:id="@+id/day_detail" style="@style/Widget.DopamineCut.StatsCard" android:orientation="vertical" android:visibility="gone" />
+                <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="플랫폼별 사용" />
+                <LinearLayout android:id="@+id/platform_list" style="@style/Widget.DopamineCut.StatsCard" android:orientation="vertical" />
+                <TextView android:id="@+id/tv_usage_ratio" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
+                <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="많이 본 시간대" />
+                <TextView android:id="@+id/tv_hourly_note" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
+                <com.github.mikephil.charting.charts.BarChart android:id="@+id/chart_hourly" android:layout_width="match_parent" android:layout_height="120dp" />
+                <TextView style="@style/Widget.DopamineCut.StatsBody" android:text="누락 날짜는 0으로 계산하지 않아요. 기록일 평균은 측정 중단 영향을 받을 수 있어요." android:textSize="11sp" />
             </LinearLayout>
-            <LinearLayout android:id="@+id/content_group" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
-                <LinearLayout android:id="@+id/panel_usage" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                    <TextView android:id="@+id/tv_summary_basis" style="@style/Widget.DopamineCut.StatsBody" />
-                    <LinearLayout android:id="@+id/summary_cards" style="@style/Widget.DopamineCut.StatsCard" android:orientation="horizontal" />
-                    <TextView android:id="@+id/tv_totals" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                    <TextView android:id="@+id/tv_comparison" style="@style/Widget.DopamineCut.StatsBody" android:textColor="@color/ui_primary" />
-                    <TextView android:id="@+id/tv_daily_title" style="@style/Widget.DopamineCut.StatsTitle" android:text="날짜별 변화" />
-                    <com.github.mikephil.charting.charts.BarChart android:id="@+id/chart_daily" android:layout_width="match_parent" android:layout_height="150dp" />
-                    <TextView style="@style/Widget.DopamineCut.StatsBody" android:text="막대를 누르면 해당 날짜의 기록을 볼 수 있어요." android:textSize="11sp" />
-                    <LinearLayout android:id="@+id/day_detail" style="@style/Widget.DopamineCut.StatsCard" android:orientation="vertical" android:visibility="gone" />
-                    <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="플랫폼별 사용" />
-                    <LinearLayout android:id="@+id/platform_list" style="@style/Widget.DopamineCut.StatsCard" android:orientation="vertical" />
-                    <TextView android:id="@+id/tv_usage_ratio" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                    <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="많이 본 시간대" />
-                    <TextView android:id="@+id/tv_hourly_note" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                    <com.github.mikephil.charting.charts.BarChart android:id="@+id/chart_hourly" android:layout_width="match_parent" android:layout_height="120dp" />
-                    <TextView style="@style/Widget.DopamineCut.StatsBody" android:text="누락 날짜는 0으로 계산하지 않아요. 기록일 평균은 측정 중단 영향을 받을 수 있어요." android:textSize="11sp" />
-                </LinearLayout>
-                <LinearLayout android:id="@+id/panel_content" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
-                    <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="콘텐츠 구성" />
-                    <TextView android:id="@+id/tv_category_scope" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                    <LinearLayout android:id="@+id/category_list" style="@style/Widget.DopamineCut.StatsCard" android:orientation="vertical" />
-                    <TextView android:id="@+id/tv_quality_notice" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                    <com.google.android.material.button.MaterialButton android:id="@+id/btn_content_info" style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="집계 기준" android:textSize="12sp" android:minHeight="48dp" />
-                </LinearLayout>
-                <LinearLayout android:id="@+id/panel_goals" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
-                    <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="목표별 변화" />
-                    <TextView android:id="@+id/tv_goals_note" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                    <LinearLayout android:id="@+id/goal_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-                </LinearLayout>
+
+            <LinearLayout android:id="@+id/panel_content" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+                <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="콘텐츠 구성" />
+                <TextView android:id="@+id/tv_category_scope" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
+                <LinearLayout android:id="@+id/category_list" style="@style/Widget.DopamineCut.StatsCard" android:orientation="vertical" />
+                <TextView android:id="@+id/tv_quality_notice" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btn_content_info" style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="집계 기준" android:textSize="12sp" android:minHeight="48dp" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/panel_goals" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+                <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="목표별 변화" />
+                <TextView android:id="@+id/tv_goals_note" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
+                <LinearLayout android:id="@+id/goal_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

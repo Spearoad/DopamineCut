@@ -1,52 +1,100 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ui_background">
+    android:background="@color/ui_background"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/ui_space_large">
+        android:padding="20dp">
 
-        <TextView style="@style/TextAppearance.DopamineCut.Headline" android:text="@string/goal_candidates_title" />
-        <TextView android:id="@+id/tv_candidate_context" style="@style/Widget.DopamineCut.BodySpacing" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_candidate_habit"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/ui_space_large"
-            android:text="@string/candidate_habit" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_candidate_session"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/candidate_session" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_measure_first"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/candidate_measure" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_direct_goal"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/set_goal_directly" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_back"
-            style="@style/Widget.Material3.Button.TextButton"
+        <TextView
+            style="@style/TextAppearance.DopamineCut.Display"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="@string/back" />
+            android:text="@string/goal_candidates_title" />
+
+        <TextView
+            android:id="@+id/tv_candidate_context"
+            style="@style/TextAppearance.DopamineCut.Body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/ui_text_secondary" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_candidate_habit"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="@font/pretendard"
+                android:minHeight="52dp"
+                android:text="@string/candidate_habit"
+                android:textColor="@color/ui_primary"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/ui_soft"
+                app:cornerRadius="16dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_candidate_session"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="@font/pretendard"
+                android:minHeight="52dp"
+                android:text="@string/candidate_session"
+                android:textColor="@color/ui_primary"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/ui_soft"
+                app:cornerRadius="16dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_measure_first"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="@font/pretendard"
+                android:minHeight="52dp"
+                android:text="@string/candidate_measure"
+                android:textColor="@color/ui_text_primary"
+                android:textSize="15sp"
+                app:cornerRadius="16dp"
+                app:strokeColor="@color/ui_outline" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_direct_goal"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/set_goal_directly"
+                android:textColor="@color/ui_primary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_back"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:text="@string/back"
+                android:textColor="@color/ui_text_secondary" />
+        </LinearLayout>
+
     </LinearLayout>
 </ScrollView>
