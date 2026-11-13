@@ -83,7 +83,7 @@ class GoalFragment : Fragment() {
         val permissions = (requireActivity().application as DopamineCutApplication)
             .requireDependencies().measurementPermissionChecker.currentState()
         val measurement = GoalMeasurementPresentation.from(permissions, null, "")
-        binding.permissionNotice.isVisible = measurement.permissionRequired
+        binding.tvPermissionNotice.isVisible = measurement.permissionRequired
         binding.tvPermissionNotice.text = "${measurement.missingPermissions} 권한 필요"
         binding.tvGoalSync.text = state.syncStatus.message
         binding.btnUseCloudGoals.isVisible = state.syncStatus.conflict
