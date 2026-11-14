@@ -42,6 +42,8 @@ import com.example.dopaminecut2.logic.shortform.VideoIdentitySessionResolver
 import com.example.dopaminecut2.logic.shortform.IdentityQuality
 import com.example.dopaminecut2.logic.shortform.InstagramOnDeviceContentClassifier
 import com.example.dopaminecut2.logic.shortform.InstagramUiClass
+import com.example.dopaminecut2.logic.shortform.KakaotalkOnDeviceContentClassifier
+import com.example.dopaminecut2.logic.shortform.KakaotalkUiClass
 import com.example.dopaminecut2.logic.shortform.YoutubeOnDeviceContentClassifier
 import com.example.dopaminecut2.session.ServiceSessionManager
 import com.example.dopaminecut2.statistics.UsageClassification
@@ -96,6 +98,11 @@ class AppBlockService : AccessibilityService() {
     private lateinit var ocrProcessor: OCRProcessor
     private var youtubeContentClassifier: YoutubeOnDeviceContentClassifier? = null
     private var instagramContentClassifier: InstagramOnDeviceContentClassifier? = null
+    private var kakaotalkContentClassifier: KakaotalkOnDeviceContentClassifier? = null
+    // 카카오톡 CV 판정은 A의 추적 흐름이 확정한 영상 키마다 한 번 내린다(null = 아직 판정 전).
+    private var kakaotalkVerdictKey: String? = null
+    private var kakaotalkVerdict: ShortformContentKind? = null
+    private var kakaotalkClassifyAttempts = 0
     private lateinit var batchClassifier: BatchContentClassifier
     private val classificationQueue = ClassificationBatchQueue()
     private val ocrTextSanitizer = OcrContentTextSanitizer()
@@ -219,6 +226,14 @@ class AppBlockService : AccessibilityService() {
             Log.i(TAG, "✅ Instagram CV 모델 메모리 로드 및 무결성 검증 성공!")
         }.onFailure { error ->
             Log.e(TAG, "❌ Instagram CV 모델 초기화 실패: 콘텐츠를 UNKNOWN으로 유지합니다.", error)
+        }.getOrNull()
+
+        kakaotalkContentClassifier = runCatching {
+            KakaotalkOnDeviceContentClassifier(applicationContext)
+        }.onSuccess {
+            Log.i(TAG, "✅ KakaoTalk CV 모델 메모리 로드 및 무결성 검증 성공!")
+        }.onFailure { error ->
+            Log.e(TAG, "❌ KakaoTalk CV 모델 초기화 실패: 접근성 기반 추적만 사용합니다.", error)
         }.getOrNull()
 
         viewTracker = ShortformSessionTracker(
@@ -666,6 +681,36 @@ class AppBlockService : AccessibilityService() {
             clearLatestOcr()
             currentContentKey = key
         }
+
+        // CV 모델이 있으면 영상마다 일반/광고/비숏폼을 판정한 뒤에만 집계한다.
+        // 판정 전에는 진입 시각을 보존하는 임시 세션(UNKNOWN, 집계 제외)으로 둔다.
+        if (kakaotalkContentClassifier != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (kakaotalkVerdictKey != key) {
+                kakaotalkVerdictKey = key
+                kakaotalkVerdict = null
+                kakaotalkClassifyAttempts = 0
+            }
+            when (val verdict = kakaotalkVerdict) {
+                null -> {
+                    currentIsShortform = false
+                    currentContentKind = ShortformContentKind.UNKNOWN
+                    viewTracker.beginProvisional(SupportedPlatform.KAKAOTALK, key)
+                    viewTracker.setPaused(decision.paused)
+                    if (contentKindJob?.isActive != true && kakaotalkClassifyAttempts < KAKAOTALK_MAX_CLASSIFY_ATTEMPTS) {
+                        classifyKakaotalkContent(key)
+                    }
+                    return
+                }
+                ShortformContentKind.NORMAL -> Unit
+                else -> {
+                    currentIsShortform = false
+                    currentContentKind = verdict
+                    viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
+                    return
+                }
+            }
+        }
+
         val provisionalSessionId = viewTracker.activeViewSessionId()?.takeIf { viewTracker.isProvisional() }
         if (provisionalSessionId != null) {
             viewTracker.resolveProvisional(
@@ -676,6 +721,73 @@ class AppBlockService : AccessibilityService() {
         }
         viewTracker.onScreenChanged(true, SupportedPlatform.KAKAOTALK, key, ShortformContentKind.NORMAL)
         viewTracker.setPaused(decision.paused)
+    }
+
+    private fun classifyKakaotalkContent(contentKey: String) {
+        val model = kakaotalkContentClassifier ?: return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        val generation = screenGeneration
+        kakaotalkClassifyAttempts++
+        contentKindJob?.cancel()
+        contentKindJob = serviceScope.launch {
+            delay(CONTENT_SETTLE_MS)
+            val bitmap = takeScreenshotBitmap() ?: return@launch
+            val inferenceStarted = monotonicClock.nowMillis()
+            val prediction = try {
+                model.classify(bitmap)
+                    .onFailure { error -> Log.w(TAG, "KakaoTalk CV 추론 실패", error) }
+                    .getOrNull()
+            } finally {
+                bitmap.recycle()
+            } ?: return@launch
+            val latencyMs = monotonicClock.nowMillis() - inferenceStarted
+
+            if (!serviceActive || generation != screenGeneration || kakaotalkVerdictKey != contentKey ||
+                currentAppManager?.platform != SupportedPlatform.KAKAOTALK) return@launch
+
+            // 신뢰도 미달(UNKNOWN)은 화면 전환 중일 수 있으므로 판정을 비워 두고 다음 화면 이벤트에서 재시도한다.
+            // 재시도를 모두 쓰면 비숏폼으로 확정해 집계하지 않는다.
+            val verdict = when {
+                prediction.uiClass.isNonShortformScreen -> ShortformContentKind.UNKNOWN
+                prediction.uiClass == KakaotalkUiClass.UNKNOWN ->
+                    if (kakaotalkClassifyAttempts < KAKAOTALK_MAX_CLASSIFY_ATTEMPTS) null else ShortformContentKind.UNKNOWN
+                else -> prediction.contentKind
+            }
+            kakaotalkVerdict = verdict
+            Log.d(
+                TAG,
+                "KakaoTalk 콘텐츠 판정: uiClass=${prediction.uiClass}, verdict=${verdict ?: "RETRY"} " +
+                        "(conf=${"%.3f".format(prediction.confidence)}, latencyMs=$latencyMs, " +
+                        "attempt=$kakaotalkClassifyAttempts, key=${contentKey.take(12)})"
+            )
+            if (verdict == null) return@launch
+
+            val provisionalSessionId = viewTracker.activeViewSessionId()?.takeIf { viewTracker.isProvisional() }
+            when (verdict) {
+                ShortformContentKind.NORMAL -> {
+                    if (provisionalSessionId != null) {
+                        viewTracker.resolveProvisional(provisionalSessionId, ShortformContentKind.NORMAL, contentKey)
+                    }
+                    viewTracker.onScreenChanged(true, SupportedPlatform.KAKAOTALK, contentKey, ShortformContentKind.NORMAL)
+                    currentIsShortform = true
+                    currentContentKind = ShortformContentKind.NORMAL
+                }
+                ShortformContentKind.AD -> {
+                    // 광고는 임시 세션을 버리고 시청 집계에서 제외한다.
+                    if (provisionalSessionId != null) {
+                        viewTracker.resolveProvisional(provisionalSessionId, ShortformContentKind.AD, contentKey)
+                    }
+                    viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
+                    currentIsShortform = false
+                    currentContentKind = ShortformContentKind.AD
+                }
+                else -> {
+                    viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
+                    currentIsShortform = false
+                    currentContentKind = ShortformContentKind.UNKNOWN
+                }
+            }
+        }
     }
 
     private fun beginYoutubeContent(contentKey: String) {
@@ -844,6 +956,9 @@ class AppBlockService : AccessibilityService() {
     private fun stopShortformTracking() {
         (appManagers[SupportedPlatform.INSTAGRAM.packageName] as? InstagramManager)?.resetTracking()
         (appManagers[SupportedPlatform.KAKAOTALK.packageName] as? KakaotalkManager)?.resetTracking()
+        kakaotalkVerdictKey = null
+        kakaotalkVerdict = null
+        kakaotalkClassifyAttempts = 0
 
         youtubeLayoutKey = null
         layoutValidationPending = false
@@ -1503,6 +1618,7 @@ class AppBlockService : AccessibilityService() {
         if (::ocrProcessor.isInitialized) ocrProcessor.close()
         youtubeContentClassifier?.close()
         instagramContentClassifier?.close()
+        kakaotalkContentClassifier?.close()
         onboardingObservationJob?.cancel()
         tickerJob?.cancel()
         serviceScope.cancel()
@@ -1515,6 +1631,7 @@ class AppBlockService : AccessibilityService() {
         const val SCREEN_REFRESH_INTERVAL_MS = 150L
         const val CONTENT_RECHECK_INTERVAL_MS = 1_000L
         const val CONTENT_SETTLE_MS = 150L
+        const val KAKAOTALK_MAX_CLASSIFY_ATTEMPTS = 3
         const val CONTENT_OCR_INTERVAL_MS = 1_500L
         const val SCREENSHOT_MIN_INTERVAL_MS = 500L
         const val OCR_CACHE_MAX_AGE_MS = 3_000L

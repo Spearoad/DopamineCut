@@ -1,0 +1,128 @@
+{
+  "model_name": "kakaotalk_shortform_state_mobilenetv3_small",
+  "version": 1,
+  "sha256": "01e80200412cb595ff547ed065130182ddc95f2325eab4e1185c2e4744f13eeb",
+  "labels": [
+    "SHORTFORM_NORMAL",
+    "SHORTFORM_AD",
+    "NOW_OPENCHAT",
+    "CHAT_FRIENDS"
+  ],
+  "input_name": "screen",
+  "input_shape": [
+    1,
+    3,
+    320,
+    320
+  ],
+  "output_name": "logits",
+  "output_shape": [
+    1,
+    4
+  ],
+  "validation_accuracy": 1.0,
+  "validation_macro_f1": 1.0,
+  "test_accuracy": 0.9362,
+  "test_macro_f1": 0.9067,
+  "training": {
+    "config": {
+      "name": "lr1e-3_ls0.0",
+      "lr": 0.001,
+      "label_smoothing": 0.0,
+      "freeze_epochs": 0
+    },
+    "split_counts": {
+      "train": {
+        "SHORTFORM_NORMAL": 124,
+        "SHORTFORM_AD": 16,
+        "NOW_OPENCHAT": 28,
+        "CHAT_FRIENDS": 38
+      },
+      "val": {
+        "SHORTFORM_NORMAL": 27,
+        "SHORTFORM_AD": 4,
+        "NOW_OPENCHAT": 7,
+        "CHAT_FRIENDS": 9
+      },
+      "test": {
+        "SHORTFORM_NORMAL": 27,
+        "SHORTFORM_AD": 4,
+        "NOW_OPENCHAT": 7,
+        "CHAT_FRIENDS": 9
+      }
+    },
+    "devices": []
+  },
+  "preprocessing": {
+    "ui_view_mode": "ui_tiles_v1",
+    "experiment": "whole_ui_v1",
+    "layout": "NCHW",
+    "color": "RGB",
+    "tile_resize": "fit_bilinear",
+    "tile_padding_rgb": [
+      0,
+      0,
+      0
+    ],
+    "imagenet_mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "imagenet_std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "roi_tiles": [
+      {
+        "source_ratio": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "destination_px": [
+          0,
+          0,
+          160,
+          320
+        ]
+      },
+      {
+        "source_ratio": [
+          0.0,
+          0.6,
+          1.0,
+          0.85
+        ],
+        "destination_px": [
+          160,
+          0,
+          320,
+          160
+        ]
+      },
+      {
+        "source_ratio": [
+          0.0,
+          0.82,
+          1.0,
+          0.97
+        ],
+        "destination_px": [
+          160,
+          160,
+          320,
+          320
+        ]
+      }
+    ]
+  },
+  "decision_thresholds": {
+    "SHORTFORM_NORMAL": 0.55,
+    "SHORTFORM_AD": 0.55,
+    "NOW_OPENCHAT": 0.55,
+    "CHAT_FRIENDS": 0.55
+  }
+}

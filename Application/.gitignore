@@ -13,7 +13,8 @@
 /build
 /captures
 /tools
-/ml
+/ml/*
+!/ml/kakaotalk/
 /functions
 /firebase-tests
 .externalNativeBuild
