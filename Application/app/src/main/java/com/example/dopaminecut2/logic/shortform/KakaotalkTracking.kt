@@ -112,7 +112,13 @@ class KakaotalkTrackingCoordinator(
 
         lastReliableMs = nowMs
         if (nowMs - pendingSinceMs < settleMs) {
-            return KakaotalkTrackingDecision(activeKey != null, true, activeKey, reason = "VIDEO_CHANGE_SETTLING")
+            return KakaotalkTrackingDecision(
+                retain = activeKey != null,
+                paused = true,
+                contentKey = activeKey,
+                reason = "VIDEO_CHANGE_SETTLING",
+                candidateKey = currentKey.takeIf { activeKey == null }
+            )
         }
 
         val changed = activeKey != null

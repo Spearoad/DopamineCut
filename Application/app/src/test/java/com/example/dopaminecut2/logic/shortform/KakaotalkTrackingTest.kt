@@ -33,6 +33,47 @@ class KakaotalkTrackingTest {
     }
 
     @Test
+    fun `initial provisional session survives intermediate settling observations`() {
+        var now = 0L
+        val manager = KakaotalkManager()
+        val tracker = ShortformSessionTracker(
+            clockMs = { now },
+            idFactory = { "kakao-entry" },
+            onSessionCompleted = {}
+        )
+        val video = video("고양이 영상")
+
+        fun observe() {
+            val decision = manager.observeTracking(video, now)
+            if (decision.retain && decision.contentKey != null) {
+                tracker.activeViewSessionId()?.takeIf { tracker.isProvisional() }?.let { sessionId ->
+                    tracker.resolveProvisional(sessionId, ShortformContentKind.NORMAL, decision.contentKey)
+                }
+                tracker.onScreenChanged(true, SupportedPlatform.KAKAOTALK, decision.contentKey, ShortformContentKind.NORMAL)
+                tracker.setPaused(decision.paused)
+            } else if (decision.candidateKey != null) {
+                tracker.beginProvisional(SupportedPlatform.KAKAOTALK, decision.candidateKey)
+            } else {
+                tracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
+            }
+        }
+
+        observe()
+        val provisionalId = tracker.activeViewSessionId()
+        assertNotNull(provisionalId)
+        now = 100L
+        observe()
+        now = 299L
+        observe()
+        assertEquals(provisionalId, tracker.activeViewSessionId())
+
+        now = 300L
+        observe()
+        assertEquals(provisionalId, tracker.activeViewSessionId())
+        assertFalse(tracker.isProvisional())
+    }
+
+    @Test
     fun `counter and playback changes keep the same video identity`() {
         val manager = KakaotalkManager()
         val first = manager.getVideoIdentifier(video("고양이 영상", "좋아요 1.2만", "00:12"))
