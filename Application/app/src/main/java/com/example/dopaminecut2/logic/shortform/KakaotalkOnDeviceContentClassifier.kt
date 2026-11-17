@@ -17,7 +17,7 @@ import kotlin.math.abs
 import kotlin.math.exp
 
 /**
- * 카카오톡 4개 화면 클래스 정의 (JSON 메타데이터의 labels 순서, ml/kakaotalk/common.py의 LABELS와 1:1 매핑)
+ * 카카오톡 4개 화면 클래스 정의 (JSON 메타데이터의 labels 순서, 26-2/kakaotalk/training/common.py의 LABELS와 1:1 매핑)
  */
 enum class KakaotalkUiClass(val labelName: String) {
     SHORTFORM_NORMAL("SHORTFORM_NORMAL"),
@@ -89,7 +89,7 @@ object KakaotalkScreenDecision {
  * MobileNetV3-Small ONNX 모델(kakaotalk_shortform_state.onnx)을 사용하여 카카오톡 화면을
  * 4개 클래스(SHORTFORM_NORMAL, SHORTFORM_AD, NOW_OPENCHAT, CHAT_FRIENDS)로 분류합니다.
  * 펑(24시간 스토리)은 학습 데이터가 부족해 클래스에서 제외했다. 펑 화면은 신뢰도 미달(UNKNOWN)로 집계에서 빠지는 것을 기대한다.
- * 학습·변환 도구: Application/ml/kakaotalk
+ * 학습·변환 도구: Application/26-2/kakaotalk/training
  */
 class KakaotalkOnDeviceContentClassifier(
     context: Context
@@ -194,7 +194,7 @@ class KakaotalkOnDeviceContentClassifier(
         }
 
     /**
-     * Python 학습 코드(ml/kakaotalk/common.py ui_tiles_v1)와 같은 320x320 변환 및 ImageNet 정규화.
+     * Python 학습 코드(26-2/kakaotalk/training/common.py ui_tiles_v1)와 같은 320x320 변환 및 ImageNet 정규화.
      */
     private fun preprocess(source: Bitmap): FloatArray {
         val pixels = IntArray(source.width * source.height)
