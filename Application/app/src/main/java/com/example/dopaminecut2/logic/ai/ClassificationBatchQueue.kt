@@ -1,13 +1,14 @@
 package com.example.dopaminecut2.logic.ai
 
 /**
- * OCR 원문을 디스크에 남기지 않고 메모리에서 최대 5개까지 모은다.
+ * 기본 동작은 OCR 원문을 디스크에 남기지 않고 메모리에서 최대 5개까지 모은다.
+ * 명시적으로 활성화한 짧은 개발 진단에서는 전송 본문이 로컬 로그에 기록될 수 있다.
  * 중복 세션은 최신 텍스트로 교체하며, 오래된 항목은 시간 기준으로 부분 전송한다.
  */
 class ClassificationBatchQueue(
     private val maxBatchSize: Int = 5,
     private val maxWaitMs: Long = 15_000L,
-    private val maxTextLength: Int = 1_500
+    private val maxTextLength: Int = 500
 ) {
     private val pending = linkedMapOf<String, PendingContentClassification>()
 

@@ -7,10 +7,11 @@ import com.example.dopaminecut2.data.model.User
 import com.example.dopaminecut2.statistics.UsageSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import com.google.firebase.firestore.Source
+import com.example.dopaminecut2.statistics.UsageSyncIdentity
+import com.example.dopaminecut2.statistics.UsageSyncConflictException
 
 interface RemoteUserDataSource {
     suspend fun fetchUser(userId: String): User
@@ -19,10 +20,17 @@ interface RemoteUserDataSource {
         monthId: String
     ): Map<String, DailyStatistics>
     suspend fun writeUsageSnapshots(snapshots: List<UsageSnapshot>)
+    suspend fun syncUsageSnapshots(snapshots: List<UsageSnapshot>): List<UsageSnapshot> {
+        writeUsageSnapshots(snapshots)
+        return snapshots
+    }
 }
 
 class FirebaseDataSource(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val functions: com.google.firebase.functions.FirebaseFunctions =
+        com.google.firebase.functions.FirebaseFunctions.getInstance("asia-northeast3"),
+    private val currentUser: () -> String? = { com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid }
 ) : RemoteUserDataSource {
     override suspend fun fetchUser(userId: String): User {
         val snapshot = firestore.collection(FirestoreCollections.USERS).document(userId).get().await()
@@ -39,69 +47,50 @@ class FirebaseDataSource(
             .document(userId)
             .collection(FirestoreCollections.MONTHS)
             .document(monthId)
-            .get()
+            .get(Source.SERVER)
             .await()
         val days = snapshot.get(FirestoreFields.DAYS).asStringMap()
         return days.mapNotNull { (dayKey, rawDay) ->
             val day = dayKey.removePrefix(DAY_PREFIX)
             if (!DAY_PATTERN.matches(day)) return@mapNotNull null
             val date = monthId + day
-            date to rawDay.asStringMap().toDailyStatistics(date)
+            val data = rawDay.asStringMap()
+            date to data.toDailyStatistics(date).copy(remoteRevision = (data["revision"] as? Number)?.toLong() ?: 0L)
         }.toMap()
     }
 
     override suspend fun writeUsageSnapshots(snapshots: List<UsageSnapshot>) {
-        if (snapshots.isEmpty()) return
-        try {
-            val batch = firestore.batch()
-            snapshots.groupBy { snapshot ->
-                require(DATE_PATTERN.matches(snapshot.date))
-                snapshot.userId to snapshot.date.substring(0, 6)
-            }.forEach { (ownerMonth, monthSnapshots) ->
-                val (userId, monthId) = ownerMonth
-                val days = monthSnapshots.associate { snapshot ->
-                    DAY_PREFIX + snapshot.date.substring(6, 8) to snapshot.toRemoteMap()
-                }
-                val reference = firestore.collection(FirestoreCollections.USERS)
-                    .document(userId)
-                    .collection(FirestoreCollections.MONTHS)
-                    .document(monthId)
-                batch.set(
-                    reference,
-                    mapOf(
-                        FirestoreFields.SCHEMA_VERSION to CURRENT_FIRESTORE_SCHEMA_VERSION,
-                        FirestoreFields.DAYS to days,
-                        FirestoreFields.UPDATED_AT to FieldValue.serverTimestamp()
-                    ),
-                    SetOptions.merge()
-                )
-            }
-            batch.commit().await()
-        } catch (error: FirebaseFirestoreException) {
-            if (error.code in RETRYABLE_FIRESTORE_CODES) {
-                throw RetryableRemoteWriteException(error)
-            }
-            throw error
-        }
+        if (syncUsageSnapshots(snapshots).size != snapshots.size) throw UsageSyncConflictException()
     }
 
-    private fun UsageSnapshot.toRemoteMap(): Map<String, Any> = mapOf(
-        FirestoreFields.APP_USAGE to appUsage.mapValues { (_, usage) ->
-            mapOf(
-                FirestoreFields.APP_TIME_SEC to usage.runTimeSec,
-                FirestoreFields.SHORTFORM_TIME_SEC to usage.shortformTimeSec,
-                FirestoreFields.SHORTFORM_COUNT to usage.shortformCount
-            )
-        },
-        FirestoreFields.CATEGORY_USAGE to categoryUsage.mapValues { (_, usage) ->
-            mapOf(
-                FirestoreFields.CATEGORY_COUNT to usage.count,
-                FirestoreFields.CATEGORY_DURATION_SEC to usage.durationSec
-            )
-        },
-        FirestoreFields.HOURLY_SHORTFORM_COUNT to hourlyShortformCount,
-        FirestoreFields.DEDUCTED_SCORE to deductedScore
-    )
+    override suspend fun syncUsageSnapshots(snapshots: List<UsageSnapshot>): List<UsageSnapshot> {
+        if (snapshots.isEmpty()) return emptyList()
+        val uid = snapshots.first().userId
+        require(snapshots.size <= 31 && snapshots.all { it.userId == uid })
+        require(currentUser() == uid) { "로그인 계정이 변경됐습니다." }
+        val items = snapshots.map { snapshot ->
+            require(DATE_PATTERN.matches(snapshot.date))
+            val data = UsageSyncIdentity.payload(snapshot)
+            mapOf("date" to snapshot.date, "baseRevision" to snapshot.baseRemoteRevision,
+                "revision" to snapshot.revision, "syncId" to UsageSyncIdentity.id(snapshot, data),
+                "baseDigest" to snapshot.baseRemoteDigest, "data" to data)
+        }
+        val response = functions.getHttpsCallable("syncUsageBatch").call(mapOf(
+            "apiVersion" to 1, "uid" to uid, "items" to items)).await().data as? Map<*, *>
+            ?: error("동기화 응답 형식이 올바르지 않습니다.")
+        require(currentUser() == uid) { "로그인 계정이 변경됐습니다. 기기 기록은 보관됩니다." }
+        require((response["apiVersion"] as? Number)?.toInt() == 1)
+        val ack = response["acknowledged"] as? List<*> ?: error("동기화 결과가 없습니다.")
+        val acknowledged = mutableSetOf<String>()
+        return ack.map { value ->
+            val row = value as? Map<*, *> ?: error("동기화 결과 형식 오류")
+            val date = row["date"] as? String ?: error("동기화 날짜 누락")
+            require(acknowledged.add(date)) { "동기화 결과 중복" }
+            val snapshot = snapshots.single { it.date == date }
+            require((row["remoteRevision"] as? Number)?.toLong() == snapshot.baseRemoteRevision + 1)
+            snapshot
+        }
+    }
 
     private fun User.toRemoteMap(): Map<String, Any> = mapOf(
         FirestoreFields.SCHEMA_VERSION to CURRENT_FIRESTORE_SCHEMA_VERSION,
@@ -196,14 +185,5 @@ class FirebaseDataSource(
         val DATE_PATTERN = Regex("^\\d{8}$")
         val MONTH_PATTERN = Regex("^\\d{6}$")
         val DAY_PATTERN = Regex("^(0[1-9]|[12]\\d|3[01])$")
-        val RETRYABLE_FIRESTORE_CODES = setOf(
-            FirebaseFirestoreException.Code.ABORTED,
-            FirebaseFirestoreException.Code.CANCELLED,
-            FirebaseFirestoreException.Code.DEADLINE_EXCEEDED,
-            FirebaseFirestoreException.Code.INTERNAL,
-            FirebaseFirestoreException.Code.RESOURCE_EXHAUSTED,
-            FirebaseFirestoreException.Code.UNAVAILABLE,
-            FirebaseFirestoreException.Code.UNKNOWN
-        )
     }
 }

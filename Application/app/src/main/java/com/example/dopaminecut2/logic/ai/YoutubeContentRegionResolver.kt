@@ -27,13 +27,18 @@ class YoutubeContentRegionResolver {
         // 옆 패널의 작성자를 영상 하단 경계로 사용하지 않는다.
         if (!creatorBounds.centerIsInside(player)) return null
         val top = player.top + player.height * .10f
-        val bottom = creatorBounds.top - player.height * .01f
+        // Keep a 7% player-height margin above the creator row.
+        val bottom = creatorBounds.top - player.height * .07f
         if (bottom <= top || bottom > player.bottom) return null
         return NormalizedBounds(player.left, top, player.right, bottom)
     }
 
     fun layoutKey(snapshot: ScreenSnapshot): String =
         "${snapshot.displayId}:${snapshot.window}:${player(snapshot)}"
+
+    /** Layout revalidation preserves an existing session; it must not block initial identity extraction. */
+    fun requiresRevalidation(previous: String?, next: String, activeContentKey: String?): Boolean =
+        previous != null && previous != next && activeContentKey != null
 
     companion object {
         // 실제 수집 트리에서 확인한 영역 ID. 없으면 전체 화면으로 폴백하지 않는다.

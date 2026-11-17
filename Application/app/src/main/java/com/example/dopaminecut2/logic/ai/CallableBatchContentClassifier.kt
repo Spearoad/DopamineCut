@@ -19,7 +19,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 class CallableBatchContentClassifier(
     private val functions: FirebaseFunctions,
-    private val currentUserId: () -> String?
+    private val currentUserId: () -> String?,
+    private val requestDiagnostic: (Map<String, Any>) -> Unit = {}
 ) : BatchContentClassifier {
     override suspend fun classify(
         batch: List<PendingContentClassification>
@@ -50,6 +51,7 @@ class CallableBatchContentClassifier(
         )
         // Recheck the owner immediately before sending sensitive text.
         requireMatchingOwner(batch, currentUserId())
+        runCatching { requestDiagnostic(payload) } // Diagnostics must never prevent a request.
         val response = try {
             functions.getHttpsCallable("classifyShortformBatch").call(payload).awaitResult()
         } catch (error: FirebaseFunctionsException) {

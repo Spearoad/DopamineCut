@@ -10,6 +10,16 @@ class InstagramManager : BaseAppManager() {
     private val extractor = InstagramIdentityExtractor()
     private val coordinator = InstagramTrackingCoordinator()
 
+    override fun contentTrackingCommand(snapshot: ScreenSnapshot, context: ContentTrackingContext): ContentTrackingCommand =
+        when {
+            isAdContent(snapshot) -> ContentTrackingCommand.Track(ShortformContentKind.AD, cancelInference = true)
+            context.contentKey != context.activeKey -> ContentTrackingCommand.BeginClassification()
+            context.knownNonReel -> ContentTrackingCommand.Wait
+            context.kind != ShortformContentKind.UNKNOWN -> ContentTrackingCommand.Track(context.kind)
+            !context.inferenceRunning -> ContentTrackingCommand.RetryClassification
+            else -> ContentTrackingCommand.Wait
+        }
+
     override fun detectShortformScreen(snapshot: ScreenSnapshot) = detector.detect(snapshot)
     override fun isShortformSection(snapshot: ScreenSnapshot) = detector.detect(snapshot).isConfirmedShortform
     override fun getVideoIdentifier(snapshot: ScreenSnapshot) = extractor.extract(snapshot).contentKey

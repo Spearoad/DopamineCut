@@ -8,5 +8,7 @@
         <item name="colorOutline">@color/ui_outline</item>
         <item name="android:colorBackground">@color/ui_background</item>
         <item name="android:navigationBarColor">@color/ui_surface</item>
+        <item name="android:fontFamily">@font/pretendard</item>
+        <item name="fontFamily">@font/pretendard</item>
     </style>
 </resources>

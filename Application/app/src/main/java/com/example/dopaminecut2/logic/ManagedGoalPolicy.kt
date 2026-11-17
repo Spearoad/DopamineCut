@@ -10,7 +10,8 @@ data class GoalInterventionRequest(val goal: ManagedGoal, val threshold: GoalThr
 
 object ManagedGoalPolicy {
     fun evaluate(goals: List<ManagedGoal>, usage: Map<String, AppUsage>, foreground: SupportedPlatform?,
-                 shortformEligible: Boolean, normalVideo: Boolean): List<GoalInterventionRequest> = goals.mapNotNull { goal ->
+                 shortformEligible: Boolean, normalVideo: Boolean,
+                 countAdmission: Boolean = false): List<GoalInterventionRequest> = goals.mapNotNull { goal ->
         if (goal.status != GoalStatus.ACTIVE || goal.intervention == InterventionMode.RECORD_ONLY || foreground !in goal.platforms) return@mapNotNull null
         if (goal.metric != GoalMetric.APP_TIME && !shortformEligible) return@mapNotNull null
         if (goal.metric == GoalMetric.DAILY_COUNT && !normalVideo) return@mapNotNull null
@@ -23,9 +24,12 @@ object ManagedGoalPolicy {
             }.coerceAtLeast(0)
         }
         val target = goal.target.toLong() * if (goal.metric == GoalMetric.DAILY_COUNT) 1 else 60
+        // Count limits are checked BEFORE admitting a new normal session. An already
+        // admitted final video remains allowed, including after temporary CV recovery.
+        val reached = if (goal.metric == GoalMetric.DAILY_COUNT) countAdmission && used >= target else used >= target
         val threshold = when {
-            used >= target -> GoalThreshold.REACHED
-            goal.intervention == InterventionMode.NOTIFY && used * 5 >= target * 4 -> GoalThreshold.NEAR
+            reached -> GoalThreshold.REACHED
+            goal.intervention == InterventionMode.NOTIFY && target > 0 && used * 5 >= target * 4 -> GoalThreshold.NEAR
             else -> return@mapNotNull null
         }
         GoalInterventionRequest(goal, threshold)

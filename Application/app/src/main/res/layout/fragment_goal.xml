@@ -18,7 +18,6 @@
             android:orientation="vertical"
             android:padding="20dp"> <!-- 좌우 여백 20dp로 통일 -->
 
-            <TextView android:id="@+id/tab_title" style="@style/Widget.DopamineCut.TabTitle" android:text="@string/goal_title" />
 
             <ProgressBar android:id="@+id/progress_loading" android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="center_horizontal" />
 

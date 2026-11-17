@@ -1,34 +1,149 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/ui_background" android:fillViewport="true">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
-        <TextView style="@style/Widget.DopamineCut.PrototypePill" android:text="처음 시작하기" />
-        <TextView style="@style/TextAppearance.DopamineCut.Headline" android:text="사용을 줄일 때\n어떤 도움을 받을까요?" />
-        <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/intervention_setup_description" />
-        <ProgressBar android:id="@+id/progress_loading" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:visibility="gone" />
-        <LinearLayout android:id="@+id/intervention_group" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-            <LinearLayout android:id="@+id/card_record" style="@style/Widget.DopamineCut.PrototypeCard">
-                <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/mode_record" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:textSize="16sp" android:textColor="@color/ui_text_primary" android:text="@string/intervention_record_title" />
-                <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/goal_intervention_record_description" />
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ui_background"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintWidth_max="480dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tv_setup_title"
+                style="@style/Widget.DopamineCut.TabTitle"
+                android:accessibilityHeading="true"
+                android:text="@string/intervention_choose_heading" />
+
+            <TextView
+                android:id="@+id/tv_setup_intro"
+                style="@style/Widget.DopamineCut.InterventionBody"
+                android:layout_marginBottom="8dp"
+                android:text="@string/intervention_choose_intro" />
+
+            <ProgressBar
+                android:id="@+id/progress_loading"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/intervention_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+            <LinearLayout
+                android:id="@+id/card_record"
+                style="@style/Widget.DopamineCut.InterventionCard">
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/mode_record"
+                    style="@style/Widget.DopamineCut.InterventionChoice"
+                    android:text="@string/intervention_record_title" />
+
+                <TextView
+                    style="@style/Widget.DopamineCut.InterventionBody"
+                    android:text="@string/goal_intervention_record_description" />
             </LinearLayout>
-<LinearLayout android:id="@+id/card_notify" style="@style/Widget.DopamineCut.PrototypeCard">
-                <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/mode_notify" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:textSize="16sp" android:textColor="@color/ui_text_primary" android:text="@string/intervention_notify_title" />
-                <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/goal_intervention_notify_description" />
+
+            <LinearLayout
+                android:id="@+id/card_notify"
+                style="@style/Widget.DopamineCut.InterventionCard">
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/mode_notify"
+                    style="@style/Widget.DopamineCut.InterventionChoice"
+                    android:text="@string/intervention_notify_title" />
+
+                <TextView
+                    style="@style/Widget.DopamineCut.InterventionBody"
+                    android:text="@string/goal_intervention_notify_description" />
             </LinearLayout>
-<LinearLayout android:id="@+id/card_confirm" style="@style/Widget.DopamineCut.PrototypeCard">
-                <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/mode_confirm" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:textSize="16sp" android:textColor="@color/ui_text_primary" android:text="@string/intervention_confirm_title" />
-                <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/goal_intervention_confirm_description" />
+
+            <LinearLayout
+                android:id="@+id/card_confirm"
+                style="@style/Widget.DopamineCut.InterventionCard">
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/mode_confirm"
+                    style="@style/Widget.DopamineCut.InterventionChoice"
+                    android:text="@string/intervention_confirm_title" />
+
+                <TextView
+                    style="@style/Widget.DopamineCut.InterventionBody"
+                    android:text="@string/goal_intervention_confirm_description" />
             </LinearLayout>
-<LinearLayout android:id="@+id/card_restrict" style="@style/Widget.DopamineCut.PrototypeCard">
-                <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/mode_restrict" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:textSize="16sp" android:textColor="@color/ui_text_primary" android:text="@string/intervention_restrict_title" />
-                <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/goal_intervention_restrict_description" />
+
+            <LinearLayout
+                android:id="@+id/card_restrict"
+                style="@style/Widget.DopamineCut.InterventionCard">
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/mode_restrict"
+                    style="@style/Widget.DopamineCut.InterventionChoice"
+                    android:text="@string/intervention_restrict_title" />
+
+                <TextView
+                    style="@style/Widget.DopamineCut.InterventionBody"
+                    android:text="@string/goal_intervention_restrict_description" />
             </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_scope_notice"
+                style="@style/Widget.DopamineCut.InterventionBody"
+                android:layout_marginTop="12dp"
+                android:text="@string/intervention_before_goal_notice" />
+
+            <TextView
+                style="@style/Widget.DopamineCut.InterventionBody"
+                android:layout_marginTop="4dp"
+                android:text="@string/intervention_permission_notice" />
+
+            <TextView
+                android:id="@+id/tv_message"
+                style="@style/Widget.DopamineCut.InterventionBody"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/ui_error"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_retry"
+                style="@style/Widget.DopamineCut.PrototypeOutline"
+                android:textSize="13sp"
+                android:text="@string/retry"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_continue"
+                style="@style/Widget.DopamineCut.InterventionPrimary"
+                android:text="@string/intervention_start_action"
+                android:enabled="false" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_record_only"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:textSize="12sp"
+                android:text="@string/intervention_record_only_action"
+                android:enabled="false" />
         </LinearLayout>
-        <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/intervention_setup_no_goal_notice" />
-        <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/goal_intervention_notification_notice" android:textSize="12sp" />
-        <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/goal_intervention_not_connected" android:textSize="12sp" />
-        <TextView android:id="@+id/tv_message" style="@style/Widget.DopamineCut.BodySpacing" android:textColor="@color/ui_error" android:accessibilityLiveRegion="polite" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/btn_retry" style="@style/Widget.DopamineCut.PrototypeOutline" android:text="@string/retry" android:visibility="gone" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/btn_continue" style="@style/Widget.DopamineCut.PrototypePrimary" android:text="이 방식으로 시작" android:enabled="false" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/btn_record_only" style="@style/Widget.Material3.Button.TextButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/intervention_record_only_action" android:enabled="false" />
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

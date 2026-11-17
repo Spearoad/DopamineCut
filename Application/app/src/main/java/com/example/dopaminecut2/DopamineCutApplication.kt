@@ -28,8 +28,13 @@ class DopamineCutApplication : Application() {
             AppCheckInstaller.install()
             dependenciesOrNull()?.let { d -> d.applicationScope.launch {
                 d.authRepository.authState().collect { uid ->
-                    if (uid == null) com.example.dopaminecut2.notifications.HabitAlarmScheduler.cancel(this@DopamineCutApplication)
-                    else com.example.dopaminecut2.notifications.HabitAlarmScheduler.schedule(this@DopamineCutApplication)
+                    if (uid == null) {
+                        com.example.dopaminecut2.notifications.HabitAlarmScheduler.cancel(this@DopamineCutApplication)
+                        d.usageSyncSchedule.cancel()
+                    } else {
+                        com.example.dopaminecut2.notifications.HabitAlarmScheduler.schedule(this@DopamineCutApplication)
+                        d.usageSyncSchedule.ensure(uid)
+                    }
                 }
             } }
         }

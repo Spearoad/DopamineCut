@@ -7,6 +7,7 @@ import com.example.dopaminecut2.logic.shortform.ShortformScreenDetection
 import com.example.dopaminecut2.logic.shortform.ShortformScreenState
 import java.text.Normalizer
 import java.util.Locale
+import com.example.dopaminecut2.logic.shortform.ShortformContentKind
 
 class KakaotalkManager : BaseAppManager() {
 
@@ -15,6 +16,13 @@ class KakaotalkManager : BaseAppManager() {
 
     override fun detectShortformScreen(snapshot: ScreenSnapshot): ShortformScreenDetection =
         trackingCoordinator.detect(snapshot)
+
+    override fun contentTrackingCommand(snapshot: ScreenSnapshot, context: ContentTrackingContext): ContentTrackingCommand =
+        ContentTrackingCommand.Track(
+            if (isAdContent(snapshot)) ShortformContentKind.AD
+            else ShortformContentKind.NORMAL,
+            cancelInference = true
+        )
 
     override fun isShortformSection(snapshot: ScreenSnapshot): Boolean {
         return detectShortformScreen(snapshot).state == ShortformScreenState.INSIDE

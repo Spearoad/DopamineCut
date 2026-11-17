@@ -16,10 +16,8 @@
     <string name="nickname">닉네임</string>
     <string name="login">로그인</string>
     <string name="signup">회원가입</string>
-    <string name="login_title">다시 만나서 반가워요</string>
-    <string name="login_description">계정에 로그인해 기록과 목표를 이어서 확인하세요.</string>
-    <string name="signup_title">DopamineCut 시작하기</string>
-    <string name="signup_description">평소 사용을 방해하지 않고 숏폼 습관을 이해할 수 있도록 도와드립니다.</string>
+    <string name="login_title">로그인</string>
+    <string name="signup_title">회원가입</string>
     <string name="go_to_signup">계정이 없나요? 회원가입</string>
     <string name="go_to_login">이미 계정이 있나요? 로그인</string>
     <string name="reset_password">비밀번호 재설정</string>
@@ -72,6 +70,14 @@
     <string name="intervention_setup_no_goal_notice">지금은 기본 방식만 선택해요. 목표를 직접 수락하기 전에는 사용을 제한하지 않아요.</string>
     <string name="intervention_record_only_action">지금은 기록만</string>
     <string name="change_intervention">기본 개입 방식 변경</string>
+    <string name="intervention_choose_heading">개입 방식 선택</string>
+    <string name="intervention_default_heading">기본 개입 방식</string>
+    <string name="intervention_choose_intro">목표를 설정할 때 사용할 방식을 골라 주세요.</string>
+    <string name="intervention_default_intro">새 목표에 사용할 기본 방식을 선택해요.</string>
+    <string name="intervention_existing_goal_notice">기존 목표의 방식은 목표 상세에서 변경할 수 있어요.</string>
+    <string name="intervention_before_goal_notice">목표를 저장하기 전에는 사용을 제한하지 않아요.</string>
+    <string name="intervention_permission_notice">알림·확인·제한은 관련 권한이 필요해요.</string>
+    <string name="intervention_start_action">이 방식으로 시작</string>
     <string name="target_apps">적용할 앱</string>
     <string name="save">저장</string>
     <string name="platform_youtube_shorts">YouTube Shorts</string>

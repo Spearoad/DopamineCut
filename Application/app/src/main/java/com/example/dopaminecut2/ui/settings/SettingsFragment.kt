@@ -15,6 +15,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.dopaminecut2.DopamineCutApplication
 import com.example.dopaminecut2.R
+import com.example.dopaminecut2.ui.common.renderPermissionStatus
 import com.example.dopaminecut2.databinding.FragmentSettingsBinding
 import com.example.dopaminecut2.di.ViewModelFactory
 import com.example.dopaminecut2.data.local.NotificationOption
@@ -38,7 +39,11 @@ open class SettingsFragment : Fragment() {
                 dependencies.userRepository,
                 dependencies.onboardingStore,
                 dependencies.measurementPermissionChecker,
-                dependencies.notificationSettingsStore, dependencies.habitStore, dependencies.dataControls
+                dependencies.notificationSettingsStore, dependencies.habitStore, dependencies.dataControls,
+                syncUsage = { uid ->
+                    try { dependencies.usageSync.sync(uid, force = true) }
+                    finally { if (dependencies.authRepository.currentUserId() == uid) dependencies.usageSyncSchedule.ensure(uid) }
+                }
             )
         }
     }
@@ -66,6 +71,7 @@ open class SettingsFragment : Fragment() {
             if (!renderingNotifications) viewModel.onAction(SettingsAction.SetAnalysis(binding.switchMeasurement.isChecked, enabled))
         }
         binding.btnDeleteToday.setOnClickListener { confirmDeletion(false) }
+        binding.btnSyncUsage.setOnClickListener { viewModel.onAction(SettingsAction.SyncUsage) }
         binding.btnDeleteAll.setOnClickListener { confirmDeletion(true) }
         binding.btnAccessibilitySettings.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -98,9 +104,11 @@ open class SettingsFragment : Fragment() {
         binding.progressLoading.isVisible = state.isLoading
         binding.tvNickname.text = state.account?.nickname ?: getString(R.string.loading)
         binding.tvEmail.text = state.account?.email ?: ""
-        binding.tvAccessibilityStatus.text = permissionLabel(state.permissions.accessibilityGranted)
-        binding.tvUsageStatus.text = permissionLabel(state.permissions.usageAccessGranted)
+        binding.tvAccessibilityStatus.renderPermissionStatus(state.permissions.accessibilityGranted)
+        binding.tvUsageStatus.renderPermissionStatus(state.permissions.usageAccessGranted)
         binding.btnLogout.isEnabled = !state.isLoggingOut
+        binding.btnSyncUsage.isEnabled = !state.isSyncingUsage && !state.isChangingData && !state.isLoggingOut
+        binding.btnSyncUsage.text = if (state.isSyncingUsage) "동기화 중…" else "사용 기록 동기화"
         renderingNotifications = true
         binding.switchMeasurement.isChecked = state.analysis.measurement
         binding.switchContentAnalysis.isChecked = state.analysis.content
@@ -125,10 +133,6 @@ open class SettingsFragment : Fragment() {
         binding.cbNotificationEvening to NotificationOption.EVENING,
         binding.switchGoalNotifications to NotificationOption.GOAL_PROGRESS,
         binding.switchMeasurementNotifications to NotificationOption.MEASUREMENT_INTERRUPTION
-    )
-
-    private fun permissionLabel(granted: Boolean): String = getString(
-        if (granted) R.string.permission_connected else R.string.permission_required
     )
 
     private fun confirmLogout() {

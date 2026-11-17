@@ -12,7 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.dopaminecut2.DopamineCutApplication
-import com.example.dopaminecut2.R
+import com.example.dopaminecut2.ui.common.renderPermissionStatus
 import com.example.dopaminecut2.databinding.FragmentMeasurementSetupBinding
 import com.example.dopaminecut2.di.ViewModelFactory
 import kotlinx.coroutines.launch
@@ -57,8 +57,8 @@ class MeasurementSetupFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    binding.tvAccessibilityStatus.text = permissionLabel(state.permissions.accessibilityGranted)
-                    binding.tvUsageStatus.text = permissionLabel(state.permissions.usageAccessGranted)
+                    binding.tvAccessibilityStatus.renderPermissionStatus(state.permissions.accessibilityGranted)
+                    binding.tvUsageStatus.renderPermissionStatus(state.permissions.usageAccessGranted)
                     binding.btnStartMeasurement.isEnabled =
                         state.permissions.accessibilityGranted && state.permissions.usageAccessGranted && !state.isSavingMeasurement
                     binding.btnLater.isEnabled = !state.isSavingMeasurement
@@ -72,10 +72,6 @@ class MeasurementSetupFragment : Fragment() {
         super.onResume()
         viewModel.onAction(SettingsAction.Refresh)
     }
-
-    private fun permissionLabel(granted: Boolean): String = getString(
-        if (granted) R.string.permission_connected else R.string.permission_required
-    )
 
     override fun onDestroyView() {
         _binding = null

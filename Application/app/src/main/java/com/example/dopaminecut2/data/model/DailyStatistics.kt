@@ -8,7 +8,8 @@ data class DailyStatistics(
     val deductedScore: Long = 0L,
     val appUsage: Map<String, AppUsage> = emptyMap(),
     val categoryUsage: Map<String, CategoryUsage> = emptyMap(),
-    val hourlyShortformCount: Map<String, Long> = emptyMap()
+    val hourlyShortformCount: Map<String, Long> = emptyMap(),
+    val remoteRevision: Long = 0L
 ) {
     val dailyScore: Long get() = max(0L, 100L - deductedScore)
     val totalAppTimeSec: Long get() = appUsage.values.sumOf(AppUsage::runTimeSec)

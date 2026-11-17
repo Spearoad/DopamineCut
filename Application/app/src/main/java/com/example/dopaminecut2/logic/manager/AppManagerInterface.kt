@@ -43,4 +43,7 @@ interface AppManagerInterface {
     /** 현재 화면의 광고 식별 */
     fun isAdContent(snapshot: ScreenSnapshot): Boolean
 
+    /** Choose the next content step; each platform owns its policy, not the service. */
+    fun contentTrackingCommand(snapshot: ScreenSnapshot, context: ContentTrackingContext): ContentTrackingCommand
+
 }

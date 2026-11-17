@@ -1,6 +1,8 @@
 <resources>
     <color name="ui_primary">#B6A4FF</color>
+    <color name="ui_on_primary">#211D2B</color>
     <color name="ui_background">#17151E</color>
+    <color name="ui_header_background">#211D2B</color>
     <color name="ui_surface">#24212E</color>
     <color name="ui_text_primary">#F1EDF9</color>
     <color name="ui_text_secondary">#BDB5CD</color>

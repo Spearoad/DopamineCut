@@ -90,9 +90,11 @@ class InstagramIdentityExtractor {
                 .joinToString("") { "%02x".format(it.toInt() and 255) }
         } else null
 
-        return VideoIdentity(SupportedPlatform.INSTAGRAM, key, creator, preview, null, null,
+        val limitedCreator = VideoIdentityNormalizer.limit(creator, VideoIdentityNormalizer.MAX_CREATOR_CODE_POINTS)
+        val limitedTitle = VideoIdentityNormalizer.limit(preview, VideoIdentityNormalizer.MAX_TITLE_CODE_POINTS)
+        return VideoIdentity(SupportedPlatform.INSTAGRAM, key, limitedCreator, limitedTitle, null, null,
             if (key == null) IdentityQuality.NONE else IdentityQuality.LOW, if (key == null) 0f else .55f,
-            identityTextTruncated = truncated)
+            identityTextTruncated = truncated || creator != limitedCreator || preview != limitedTitle)
     }
 
     fun isExplicitAd(snapshot: ScreenSnapshot): Boolean = snapshot.elements.any { e ->

@@ -57,7 +57,8 @@ data class ScreenSnapshot(
     val viewIds: List<String>,
     val elements: List<ScreenElement> = emptyList(),
     val window: ScreenWindow? = null,
-    val displayId: Int = 0
+    val displayId: Int = 0,
+    val complete: Boolean = true
 ) {
     fun contains(keyword: String): Boolean {
         return texts.any { it.contains(keyword, ignoreCase = true) } ||
@@ -99,7 +100,7 @@ data class ScreenSnapshot(
     companion object {
         private const val MAX_NODES = 300
 
-        fun from(rootNode: AccessibilityNodeInfo?): ScreenSnapshot {
+        fun from(rootNode: AccessibilityNodeInfo?, canContinue: () -> Boolean = { true }): ScreenSnapshot {
             if (rootNode == null) return ScreenSnapshot(emptyList(), emptyList())
 
             val texts = linkedSetOf<String>()
@@ -113,15 +114,20 @@ data class ScreenSnapshot(
             val rootHeight = rootBounds.height().coerceAtLeast(1)
 
             var visited = 0
-            while (queue.isNotEmpty() && visited < MAX_NODES) {
+            var complete = true
+            while (queue.isNotEmpty() && visited < MAX_NODES && canContinue()) {
                 val node = queue.removeFirst()
                 visited++
 
                 // 부모가 숨겨져 있어도 자식의 visibility는 개별 확인한다.
                 for (index in 0 until node.childCount) {
+                    if (!canContinue()) { complete = false; break }
                     node.getChild(index)?.let(queue::addLast)
                 }
-                if (!node.isVisibleToUser) continue
+                if (!node.isVisibleToUser) {
+                    if (node !== rootNode) { @Suppress("DEPRECATION") node.recycle() }
+                    continue
+                }
 
                 node.text?.toString()?.trim()?.takeIf(String::isNotEmpty)?.let(texts::add)
                 node.contentDescription?.toString()?.trim()?.takeIf(String::isNotEmpty)?.let(texts::add)
@@ -146,12 +152,16 @@ data class ScreenSnapshot(
                     bounds = normalizedBounds,
                     isSelected = node.isSelected
                 )
+                if (node !== rootNode) { @Suppress("DEPRECATION") node.recycle() }
 
             }
 
+            if (queue.isNotEmpty()) complete = false
+            queue.forEach { if (it !== rootNode) { @Suppress("DEPRECATION") it.recycle() } }
             return ScreenSnapshot(texts.toList(), viewIds.toList(), elements,
                 ScreenWindow(rootBounds.left, rootBounds.top, rootBounds.width(), rootBounds.height()),
-                if (android.os.Build.VERSION.SDK_INT >= 30) rootNode.window?.displayId ?: 0 else 0)
+                if (android.os.Build.VERSION.SDK_INT >= 30) rootNode.window?.displayId ?: 0 else 0,
+                complete = complete)
         }
     }
 }

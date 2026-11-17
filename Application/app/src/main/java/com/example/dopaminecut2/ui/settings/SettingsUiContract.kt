@@ -14,6 +14,7 @@ data class SettingsUiState(
     val permissions: MeasurementPermissionState = MeasurementPermissionState(false, false),
     val isLoading: Boolean = true,
     val isLoggingOut: Boolean = false,
+    val isSyncingUsage: Boolean = false,
     val notifications: NotificationSettings = NotificationSettings(),
     val notificationsLoaded: Boolean = false,
     val isSavingNotifications: Boolean = false,
@@ -26,6 +27,7 @@ sealed interface SettingsAction {
     data class DeleteRecords(val all: Boolean) : SettingsAction
     data object Refresh : SettingsAction
     data object Logout : SettingsAction
+    data object SyncUsage : SettingsAction
     data class FinishMeasurementSetup(val deferred: Boolean) : SettingsAction
     data object ClearMessage : SettingsAction
     data class SetNotification(val option: NotificationOption, val enabled: Boolean) : SettingsAction

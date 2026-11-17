@@ -8,14 +8,6 @@
     android:padding="16dp">
 
     <!-- 화면 타이틀 유지 -->
-    <TextView
-        android:id="@+id/tab_title"
-        style="@style/Widget.DopamineCut.TabTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/stats_title"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- 1. 최상위 뷰 (메인 탭): section_group을 TabLayout으로 변경 -->
     <com.google.android.material.tabs.TabLayout
@@ -23,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/tab_title"
+        app:layout_constraintTop_toTopOf="parent"
         app:tabIndicatorColor="@color/ui_primary"
         app:tabMode="fixed"
         app:tabSelectedTextColor="@color/ui_primary">
@@ -72,7 +64,8 @@
             android:id="@+id/chip_group_platform"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:singleSelection="true">
+            app:singleSelection="true"
+            app:selectionRequired="true">
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_platform_all"

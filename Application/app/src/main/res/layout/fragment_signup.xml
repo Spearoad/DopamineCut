@@ -3,98 +3,102 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/ui_background"
     android:fillViewport="true">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:orientation="vertical"
-        android:padding="@dimen/ui_space_large">
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="32dp">
 
-        <TextView
-            style="@style/TextAppearance.DopamineCut.Headline"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/auth_form"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/signup_title" />
+            android:orientation="vertical"
+            app:layout_constraintWidth_max="360dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/ui_space_small"
-            android:text="@string/signup_description" />
+            <TextView
+                style="@style/Widget.DopamineCut.AuthBrand"
+                android:text="@string/app_name" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/ui_space_large"
-            android:hint="@string/email">
+            <TextView
+                style="@style/Widget.DopamineCut.AuthTitle"
+                android:accessibilityHeading="true"
+                android:text="@string/signup_title" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_email"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textEmailAddress" />
-        </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.DopamineCut.AuthField"
+                android:layout_marginTop="24dp"
+                android:hint="@string/email">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/ui_space_medium"
-            android:hint="@string/password"
-            app:endIconMode="password_toggle">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_email"
+                    style="@style/Widget.DopamineCut.AuthInput"
+                    android:autofillHints="emailAddress"
+                    android:imeOptions="actionNext"
+                    android:inputType="textEmailAddress" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_password"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPassword"
-                android:saveEnabled="false" />
-        </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.DopamineCut.AuthField"
+                android:hint="@string/password"
+                app:endIconMode="password_toggle">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/ui_space_medium"
-            android:hint="@string/nickname">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_password"
+                    style="@style/Widget.DopamineCut.AuthInput"
+                    android:autofillHints="newPassword"
+                    android:imeOptions="actionNext"
+                    android:inputType="textPassword"
+                    android:saveEnabled="false" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_nickname"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPersonName"
-                android:maxLength="20" />
-        </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.DopamineCut.AuthField"
+                android:hint="@string/nickname">
 
-        <TextView
-            android:id="@+id/tv_auth_message"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/ui_space_small"
-            android:textColor="@color/ui_error"
-            android:visibility="gone" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_nickname"
+                    style="@style/Widget.DopamineCut.AuthInput"
+                    android:autofillHints="nickname"
+                    android:imeOptions="actionDone"
+                    android:inputType="textPersonName"
+                    android:maxLength="20" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <ProgressBar
-            android:id="@+id/progress_bar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/ui_space_medium"
-            android:visibility="gone" />
+            <TextView
+                android:id="@+id/tv_auth_message"
+                style="@style/Widget.DopamineCut.BodySpacing"
+                android:accessibilityLiveRegion="polite"
+                android:textColor="@color/ui_error"
+                android:textSize="12sp"
+                android:visibility="gone" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_signup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/ui_space_medium"
-            android:text="@string/signup" />
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_go_to_login"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="@string/go_to_login" />
-    </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_signup"
+                style="@style/Widget.DopamineCut.AuthButton"
+                android:text="@string/signup" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_go_to_login"
+                style="@style/Widget.DopamineCut.AuthTextButton"
+                android:layout_marginTop="4dp"
+                android:text="@string/go_to_login" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

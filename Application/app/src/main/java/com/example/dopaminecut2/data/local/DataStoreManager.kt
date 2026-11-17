@@ -336,6 +336,31 @@ class DataStoreManager(private val context: Context) : OnboardingStore, UsageSna
         }
     }
 
+    override suspend fun acknowledgeRemote(snapshot: UsageSnapshot) {
+        context.dataStore.edit { preferences ->
+            val snapshots = decodeSnapshots(preferences[usageSnapshotsKey]).toMutableList()
+            val index = snapshots.indexOfFirst { it.userId == snapshot.userId && it.date == snapshot.date }
+            val current = snapshots.getOrNull(index) ?: return@edit
+            if (current.baseRemoteRevision == snapshot.baseRemoteRevision) {
+                snapshots[index] = current.acknowledge(snapshot)
+                preferences[usageSnapshotsKey] = prune(snapshots).map(::encodeSnapshot).toSet()
+            }
+        }
+    }
+
+    override suspend fun reconcileRemote(userId: String, statistics: com.example.dopaminecut2.data.model.DailyStatistics): UsageSnapshot {
+        var result = UsageSnapshot.fromDaily(userId, statistics)
+        context.dataStore.edit { preferences ->
+            val snapshots = decodeSnapshots(preferences[usageSnapshotsKey]).toMutableList()
+            val index = snapshots.indexOfFirst { it.userId == userId && it.date == statistics.date }
+            val current = snapshots.getOrNull(index)
+            result = current?.reconcile(statistics) ?: result
+            if (index < 0) snapshots.add(result) else snapshots[index] = result
+            preferences[usageSnapshotsKey] = prune(snapshots).map(::encodeSnapshot).toSet()
+        }
+        return result
+    }
+
     private fun prune(values: List<UsageSnapshot>): List<UsageSnapshot> = values
         .groupBy(UsageSnapshot::userId)
         .flatMap { (_, userValues) ->
@@ -358,6 +383,8 @@ class DataStoreManager(private val context: Context) : OnboardingStore, UsageSna
         put("uid", value.userId)
         put("date", value.date)
         put("revision", value.revision)
+        put("remoteRevision", value.baseRemoteRevision)
+        put("remoteDigest", value.baseRemoteDigest)
         put("dirty", value.dirty)
         put("deducted", value.deductedScore)
         put("updated", value.updatedAtEpochMs)
@@ -413,6 +440,8 @@ class DataStoreManager(private val context: Context) : OnboardingStore, UsageSna
             userId = json.getString("uid"),
             date = json.getString("date"),
             revision = json.optLong("revision"),
+            baseRemoteRevision = json.optLong("remoteRevision"),
+            baseRemoteDigest = json.optString("remoteDigest"),
             dirty = json.optBoolean("dirty"),
             appUsage = json.optJSONObject("apps").toAppUsageMap(),
             categoryUsage = json.optJSONObject("categories").toCategoryUsageMap(),

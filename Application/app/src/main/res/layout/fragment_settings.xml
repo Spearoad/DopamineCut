@@ -2,7 +2,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/ui_background" android:padding="16dp">
     <LinearLayout android:id="@+id/settings_overview" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-        <TextView android:id="@+id/tab_title" style="@style/Widget.DopamineCut.TabTitle" android:text="@string/settings_title" />
         <TextView style="@style/Widget.DopamineCut.SettingsCompactTitle" android:text="@string/notification_habit_heading" android:textSize="14sp" android:layout_marginTop="8dp" />
         <TextView style="@style/Widget.DopamineCut.SettingsCompactBody" android:text="@string/notification_habit_frequency" android:textSize="12sp" />
         <LinearLayout style="@style/Widget.DopamineCut.SettingsCompactCard" android:orientation="horizontal" android:padding="4dp">
@@ -57,6 +56,8 @@
                 <TextView style="@style/Widget.DopamineCut.SettingsCompactBody" android:text="@string/settings_not_connected" android:textColor="@color/ui_warning" />
             </LinearLayout>
             <LinearLayout android:id="@+id/panel_data" style="@style/Widget.DopamineCut.SettingsCompactCard" android:visibility="gone">
+                <TextView style="@style/Widget.DopamineCut.SettingsCompactBody" android:text="사용 기록은 하루 한 번 자동으로 동기화해요. 미전송 기록은 기기에 보관돼요." />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btn_sync_usage" style="@style/Widget.DopamineCut.SettingsCompactButton" android:text="사용 기록 동기화" android:layout_marginTop="8dp" />
                 <TextView style="@style/Widget.DopamineCut.SettingsCompactTitle" android:text="데이터 보관·연결" />
                 <TextView style="@style/Widget.DopamineCut.SettingsCompactBody" android:text="기기에 먼저 저장한 뒤 서버에 동기화해요. 연결이 끊기면 미전송 기록을 보관하고 다시 시도해요." />
                 <com.google.android.material.button.MaterialButton android:id="@+id/btn_delete_today" style="@style/Widget.DopamineCut.SettingsCompactButton" android:enabled="false" android:text="오늘 기록 삭제" android:layout_marginTop="8dp" />

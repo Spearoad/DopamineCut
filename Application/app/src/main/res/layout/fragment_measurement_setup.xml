@@ -10,7 +10,11 @@
         android:orientation="vertical"
         android:padding="@dimen/ui_space_large">
 
-        <TextView style="@style/TextAppearance.DopamineCut.Headline" android:text="@string/measurement_setup_title" />
+        <TextView
+            style="@style/TextAppearance.DopamineCut.Headline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/measurement_setup_title" />
         <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/measurement_setup_description" />
         <TextView style="@style/Widget.DopamineCut.BodySpacing" android:text="@string/intervention_setup_no_goal_notice" android:textColor="@color/ui_text_secondary" />
 

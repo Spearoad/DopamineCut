@@ -20,6 +20,7 @@ import com.example.dopaminecut2.di.AppDependencies
 import com.example.dopaminecut2.di.ViewModelFactory
 import com.example.dopaminecut2.ui.navigation.AppDestination
 import com.example.dopaminecut2.ui.navigation.AppNavigator
+import com.example.dopaminecut2.ui.navigation.MainTabHeader
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 
@@ -28,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var dependencies: AppDependencies
     private lateinit var viewModel: MainViewModel
     private lateinit var navController: NavController
+    private lateinit var tabHeader: MainTabHeader
     private var lastUserId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         dependencies = resolved
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        tabHeader = MainTabHeader(binding.tabHeader)
 
         val navHost = supportFragmentManager.findFragmentById(R.id.main_nav_host)
             as? NavHostFragment ?: NavHostFragment.create(R.navigation.main_nav_graph).also {
@@ -50,12 +53,8 @@ class MainActivity : AppCompatActivity() {
             }
         navController = navHost.navController
         binding.bottomNavigation.setupWithNavController(navController)
-        navController.addOnDestinationChangedListener { _, destination, _ ->
-            binding.bottomNavigation.visibility = if (destination.id in TOP_LEVEL_DESTINATIONS) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
+        navController.addOnDestinationChangedListener { _, _, _ ->
+            updateNavigationChrome()
         }
 
         viewModel = ViewModelProvider(
@@ -144,8 +143,15 @@ class MainActivity : AppCompatActivity() {
     private fun showLoading(show: Boolean = true) {
         binding.entryProgress.visibility = if (show) View.VISIBLE else View.GONE
         binding.mainNavHost.visibility = if (show) View.INVISIBLE else View.VISIBLE
+        updateNavigationChrome()
+    }
+
+    private fun updateNavigationChrome() {
+        val contentVisible = binding.entryProgress.visibility != View.VISIBLE &&
+            binding.mainNavHost.visibility == View.VISIBLE
+        tabHeader.render(navController.currentDestination?.id, contentVisible)
         binding.bottomNavigation.visibility = if (
-            !show && navController.currentDestination?.id in TOP_LEVEL_DESTINATIONS
+            contentVisible && navController.currentDestination?.id in TOP_LEVEL_DESTINATIONS
         ) View.VISIBLE else View.GONE
     }
 

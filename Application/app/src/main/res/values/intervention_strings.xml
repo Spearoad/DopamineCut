@@ -1,0 +1,17 @@
+<resources>
+    <string name="intervention_reached_title">오늘의 목표에 도달했어요</string>
+    <string name="intervention_metric_time">숏폼 시청 시간</string>
+    <string name="intervention_metric_count">시청 영상 수</string>
+    <string name="intervention_metric_app">앱 사용 시간</string>
+    <string name="intervention_daily_minutes">하루 %1$d분</string>
+    <string name="intervention_daily_count">하루 %1$d개</string>
+    <string name="intervention_scope_shortform">%1$s · 숏폼 시청에만 적용</string>
+    <string name="intervention_scope_app">%1$s · 앱 전체 사용에 적용</string>
+    <string name="intervention_finish">여기서 마치기</string>
+    <string name="intervention_extend">5분 더 보기</string>
+    <string name="intervention_settings">목표 설정·중지</string>
+    <string name="intervention_notice_near">%1$s 목표에 가까워졌어요</string>
+    <string name="intervention_notice_reached">%1$s 목표에 도달했어요</string>
+    <string name="intervention_notice_rest">잠깐 쉬어갈까요?</string>
+    <string name="intervention_notice_continuous">숏폼 연속 시청 %1$d분</string>
+</resources>

@@ -104,15 +104,20 @@ class UsageStatisticsManager(
         val pending = snapshotStore.pending(userId, limit)
         if (pending.isEmpty()) return RetrySummary(0, 0, 0)
 
-        val result = runCatching { remoteDataSource.writeUsageSnapshots(pending) }
-        if (result.isSuccess) {
-            pending.forEach { snapshot ->
-                snapshotStore.markSynced(snapshot.userId, snapshot.date, snapshot.revision)
+        var synced = 0
+        try {
+            remoteDataSource.syncUsageSnapshots(pending).forEach { snapshot ->
+                snapshotStore.acknowledgeRemote(snapshot)
+                synced++
             }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            // A conflict/failure must not discard or acknowledge this local revision.
         }
         return RetrySummary(
             attempted = pending.size,
-            synced = if (result.isSuccess) pending.size else 0,
+            synced = synced,
             // `remaining` is a count, not a boolean "has more" flag. Asking for
             // one item made every value above one look like `1` to callers.
             remaining = snapshotStore.pending(userId, Int.MAX_VALUE).size

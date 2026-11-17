@@ -16,6 +16,10 @@ class DataControls(private val auth: AuthRepository, private val firestore: Fire
     var quiesceService: (suspend () -> Unit)? = null
     val finishingJobs = java.util.concurrent.CopyOnWriteArrayList<kotlinx.coroutines.Job>()
     private val mutex = Mutex()
+    suspend fun <T> withUsageSync(uid: String, work: suspend () -> T): T = mutex.withLock {
+        require(auth.currentUserId() == uid)
+        work()
+    }
     suspend fun delete(uid: String, date: String?): Result<Unit> = runCatching { kotlinx.coroutines.withTimeout(60_000) { mutex.withLock {
         require(auth.currentUserId() == uid)
         habits.setSettings(uid, habits.settings(uid).first().copy(measurement = false))
@@ -24,7 +28,9 @@ class DataControls(private val auth: AuthRepository, private val firestore: Fire
         val months = firestore.collection("users").document(uid).collection("months")
         if (date != null) {
             val ref = months.document(date.take(6))
-            if (ref.get(Source.SERVER).await().exists()) ref.update("days.d${date.takeLast(2)}", FieldValue.delete()).await()
+            if (ref.get(Source.SERVER).await().exists()) ref.update(mapOf(
+                "days.d${date.takeLast(2)}" to FieldValue.delete(), "write_day" to "d${date.takeLast(2)}",
+                "updated_at" to FieldValue.serverTimestamp())).await()
         } else {
             // Bounded pages rather than loading or deleting an unbounded collection in one batch.
             while (true) {

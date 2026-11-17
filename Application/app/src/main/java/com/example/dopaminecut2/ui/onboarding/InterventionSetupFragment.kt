@@ -56,6 +56,9 @@ class InterventionSetupFragment : Fragment() {
                 viewModel.uiState.collect { state ->
                     rendering = true
                     binding.progressLoading.isVisible = state.loading || state.saving
+                    binding.tvSetupTitle.setText(if (state.editing) R.string.intervention_default_heading else R.string.intervention_choose_heading)
+                    binding.tvSetupIntro.setText(if (state.editing) R.string.intervention_default_intro else R.string.intervention_choose_intro)
+                    binding.tvScopeNotice.setText(if (state.editing) R.string.intervention_existing_goal_notice else R.string.intervention_before_goal_notice)
                     choices.forEach { (radio, card, mode) ->
                         radio.isChecked = state.selection == mode
                         card.isSelected = state.selection == mode
@@ -64,11 +67,12 @@ class InterventionSetupFragment : Fragment() {
                         it.isEnabled = state.loaded && !state.saving
                     }
                     binding.btnContinue.isEnabled = state.loaded && !state.saving && state.selection != null
-                    binding.btnContinue.text = if (state.editing) getString(R.string.save) else "이 방식으로 시작"
+                    binding.btnContinue.setText(if (state.editing) R.string.save else R.string.intervention_start_action)
                     binding.btnRecordOnly.isEnabled = state.loaded && !state.saving
                     binding.btnRecordOnly.isVisible = !state.editing
                     binding.btnRetry.isVisible = !state.loading && !state.loaded && state.message != null
                     binding.tvMessage.text = state.message.orEmpty()
+                    binding.tvMessage.isVisible = !state.message.isNullOrBlank()
                     rendering = false
                     state.nextStage?.let { next ->
                         val navigator = AppNavigator(findNavController())

@@ -2,6 +2,7 @@ package com.example.dopaminecut2.logic.manager
 
 import com.example.dopaminecut2.domain.SupportedPlatform
 import com.example.dopaminecut2.logic.shortform.ShortformScreenDetection
+import com.example.dopaminecut2.logic.shortform.ShortformContentKind
 import com.example.dopaminecut2.logic.shortform.VideoIdentity
 import com.example.dopaminecut2.logic.shortform.YoutubeAccessibilityIdentityExtractor
 import com.example.dopaminecut2.logic.shortform.YoutubeEntryDetector
@@ -11,6 +12,14 @@ class YoutubeManager : BaseAppManager() {
     override val platform = SupportedPlatform.YOUTUBE
     private val entryDetector = YoutubeEntryDetector()
     private val identityExtractor = YoutubeAccessibilityIdentityExtractor()
+
+    override fun contentTrackingCommand(snapshot: ScreenSnapshot, context: ContentTrackingContext): ContentTrackingCommand =
+        when {
+            context.contentKey != context.activeKey -> ContentTrackingCommand.BeginClassification(provisional = true)
+            context.kind != ShortformContentKind.UNKNOWN ->
+                ContentTrackingCommand.Track(context.kind)
+            else -> ContentTrackingCommand.Wait // Existing YouTube ticker owns provisional/live retries.
+        }
 
     override fun isShortformSection(snapshot: ScreenSnapshot): Boolean {
         return detectShortformScreen(snapshot).isConfirmedShortform

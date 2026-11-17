@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ui_primary">#6550CF</color>
+    <color name="ui_on_primary">#FFFFFF</color>
     <color name="ui_background">#F6F5FA</color>
+    <color name="ui_header_background">#EEEBF5</color>
     <color name="ui_surface">#FFFFFFFF</color>
     <color name="ui_text_primary">#242132</color>
     <color name="ui_text_secondary">#666174</color>

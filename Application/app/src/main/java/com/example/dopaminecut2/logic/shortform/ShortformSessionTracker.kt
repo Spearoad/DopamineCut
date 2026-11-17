@@ -45,14 +45,16 @@ class ShortformSessionTracker(
     private val onCheckpoint: (ShortformSessionCheckpoint) -> Unit = {},
     private val onSessionCompleted: (CompletedShortformSession) -> Unit,
     private val onProvisionalCheckpoint: (ProvisionalViewCheckpoint) -> Unit = {},
-    private val onProvisionalSettled: (String) -> Unit = {}
+    private val onProvisionalSettled: (String) -> Unit = {},
+    private val admitNormalSession: (SupportedPlatform) -> Boolean = { true }
 ) {
     private data class ActiveSession(
         val viewSessionId: String,
         val platform: SupportedPlatform,
         var contentKey: String,
         var contentKind: ShortformContentKind,
-        val startedAtMs: Long,
+        var startedAtMs: Long,
+        var admissionPending: Boolean = false,
         var reportedCount: Long = 0L,
         var checkpointDurationSec: Long = 0L,
         var pausedAtMs: Long? = null,
@@ -63,6 +65,7 @@ class ShortformSessionTracker(
 
     fun activeViewSessionId(): String? = active?.viewSessionId
     fun isProvisional(): Boolean = active?.contentKind == ShortformContentKind.UNKNOWN
+    fun isAdmissionPending(): Boolean = active?.admissionPending == true
 
     /** Start measurement at observed entry, not at CV completion; UNKNOWN stays out of totals. */
     fun beginProvisional(platform: SupportedPlatform, contentKey: String) {
@@ -78,6 +81,24 @@ class ShortformSessionTracker(
         val current = active ?: return false
         if (current.viewSessionId != expectedSessionId || current.contentKind != ShortformContentKind.UNKNOWN ||
             kind == ShortformContentKind.UNKNOWN || contentKey.isBlank()) return false
+        if (kind == ShortformContentKind.NORMAL) {
+            val admitted = admitNormalSession(current.platform)
+            if (active !== current) return false // An intervention can synchronously stop tracking.
+            if (!admitted) {
+                current.admissionPending = true
+                setPaused(true)
+                onProvisionalSettled(current.viewSessionId)
+                return false
+            }
+        }
+        if (current.admissionPending && kind != ShortformContentKind.AD) {
+            // Goal extension or time-only reclassification: never count denied waiting time.
+            current.startedAtMs = clockMs()
+            current.pausedAtMs = null
+            current.pausedDurationMs = 0L
+            current.checkpointDurationSec = 0L
+            current.admissionPending = false
+        }
         onProvisionalSettled(current.viewSessionId)
         if (kind == ShortformContentKind.AD) {
             active = null
@@ -91,7 +112,8 @@ class ShortformSessionTracker(
     }
     /** Cumulative live progress; callers subtract their last checkpoint, never add it twice. */
     fun activeProgress(): ShortformSessionCheckpoint? = active?.let {
-        val result = countingPolicy.result(it.contentKind, elapsedSec(it))
+        val result = if (it.admissionPending) ShortformCountResult(0, 0)
+            else countingPolicy.result(it.contentKind, elapsedSec(it))
         ShortformSessionCheckpoint(it.viewSessionId, it.platform, it.contentKey, it.contentKind, result.trackedDurationSec, result.count)
     }
 
@@ -102,6 +124,16 @@ class ShortformSessionTracker(
         contentKind: ShortformContentKind
     ) {
         val normalizedKey = contentKey?.trim()?.takeIf(String::isNotEmpty)
+        // Missing classification is not evidence of a new video or leaving the player.
+        // Preserve the counted flag and session ID, but never accrue uncertain time.
+        val existing = active
+        if (isShortform && platform != null && normalizedKey != null &&
+            contentKind == ShortformContentKind.UNKNOWN &&
+            existing?.platform == platform && existing.contentKey == normalizedKey &&
+            existing.contentKind != ShortformContentKind.UNKNOWN) {
+            setPaused(true)
+            return
+        }
         val trackable = isShortform && platform != null && normalizedKey != null &&
             contentKind != ShortformContentKind.AD &&
             contentKind != ShortformContentKind.UNKNOWN
@@ -121,7 +153,20 @@ class ShortformSessionTracker(
             return
         }
 
+        // Promotion must pass the same gate as direct normal sessions. Repeated snapshots
+        // of a denied video must not finish it and manufacture new counted sessions.
+        if (current != null && current.platform == platform && current.contentKey == normalizedKey &&
+            current.contentKind == ShortformContentKind.UNKNOWN && contentKind == ShortformContentKind.NORMAL) {
+            resolveProvisional(current.viewSessionId, contentKind, normalizedKey!!)
+            return
+        }
+
         finishActiveSession()
+        if (contentKind == ShortformContentKind.NORMAL) {
+            beginProvisional(platform!!, normalizedKey!!)
+            active?.viewSessionId?.let { resolveProvisional(it, contentKind, normalizedKey) }
+            return
+        }
         active = ActiveSession(
             viewSessionId = idFactory(),
             platform = platform,
@@ -133,6 +178,7 @@ class ShortformSessionTracker(
 
     fun tick() {
         val current = active ?: return
+        if (current.admissionPending) return
         val durationSec = elapsedSec(current)
         if (current.contentKind == ShortformContentKind.UNKNOWN) {
             reportProvisional(current, durationSec)
@@ -145,8 +191,10 @@ class ShortformSessionTracker(
     /** 댓글/공유 중에는 시간을 제외하되 동일 영상의 세션과 카운트는 유지한다. */
     fun setPaused(paused: Boolean) {
         val current = active ?: return
+        if (!paused && current.admissionPending) return
         if (paused && current.pausedAtMs == null) {
             current.pausedAtMs = clockMs()
+            if (current.admissionPending) return
             if (current.contentKind == ShortformContentKind.UNKNOWN) {
                 reportProvisional(current, elapsedSec(current))
             } else reportCheckpoint(current, elapsedSec(current), force = true)
@@ -166,6 +214,10 @@ class ShortformSessionTracker(
         val current = active ?: return
         // A count callback can trigger an intervention and re-enter this method.
         active = null
+        if (current.admissionPending) {
+            onProvisionalSettled(current.viewSessionId)
+            return
+        }
         val durationSec = elapsedSec(current)
         if (current.contentKind == ShortformContentKind.UNKNOWN) {
             reportProvisional(current, durationSec, ended = true)

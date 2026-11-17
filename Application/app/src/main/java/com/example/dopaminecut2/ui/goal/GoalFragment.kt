@@ -83,7 +83,11 @@ class GoalFragment : Fragment() {
         val permissions = (requireActivity().application as DopamineCutApplication)
             .requireDependencies().measurementPermissionChecker.currentState()
         val measurement = GoalMeasurementPresentation.from(permissions, null, "")
+        // A visible child cannot display while the new shared notice card is GONE.
+        binding.layoutEmptyState.isVisible = measurement.permissionRequired ||
+            state.goalsLoading || !state.goalsMessage.isNullOrBlank()
         binding.tvPermissionNotice.isVisible = measurement.permissionRequired
+        binding.btnGoalPermissions.isVisible = measurement.permissionRequired
         binding.tvPermissionNotice.text = "${measurement.missingPermissions} 권한 필요"
         binding.tvGoalSync.text = state.syncStatus.message
         binding.btnUseCloudGoals.isVisible = state.syncStatus.conflict

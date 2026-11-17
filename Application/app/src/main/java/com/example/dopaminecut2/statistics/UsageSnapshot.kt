@@ -21,8 +21,18 @@ data class UsageSnapshot(
     val deductedScore: Long = 0L,
     val updatedAtEpochMs: Long = 0L,
     // Local only. FirebaseDataSource serializes only aggregate fields explicitly.
-    val shortformSessions: Map<String, ShortformSessionRecord> = emptyMap()
+    val shortformSessions: Map<String, ShortformSessionRecord> = emptyMap(),
+    val baseRemoteRevision: Long = 0L,
+    val baseRemoteDigest: String = ""
 ) {
+    fun reconcile(statistics: DailyStatistics): UsageSnapshot =
+        if (dirty || baseRemoteRevision > statistics.remoteRevision ||
+            baseRemoteRevision == statistics.remoteRevision && baseRemoteRevision > 0) this
+        else fromDaily(userId, statistics).copy(revision = revision, shortformSessions = shortformSessions)
+
+    fun acknowledge(uploaded: UsageSnapshot): UsageSnapshot = if (baseRemoteRevision != uploaded.baseRemoteRevision) this
+        else copy(baseRemoteRevision = uploaded.baseRemoteRevision + 1,
+            baseRemoteDigest = UsageSyncIdentity.digest(UsageSyncIdentity.payload(uploaded)), dirty = revision != uploaded.revision)
     fun accumulate(event: UsageEvent): UsageSnapshot {
         require(event.userId == userId && event.date == date)
         val platformKey = event.platform.storageKey
@@ -69,7 +79,8 @@ data class UsageSnapshot(
         deductedScore = deductedScore,
         appUsage = appUsage,
         categoryUsage = categoryUsage,
-        hourlyShortformCount = hourlyShortformCount
+        hourlyShortformCount = hourlyShortformCount,
+        remoteRevision = baseRemoteRevision
     )
 
     /** Cumulative checkpoints may arrive twice or out of order; only new deltas are counted. */
@@ -179,8 +190,9 @@ data class UsageSnapshot(
             appUsage = statistics.appUsage,
             categoryUsage = statistics.categoryUsage,
             hourlyShortformCount = statistics.hourlyShortformCount,
-            deductedScore = statistics.deductedScore
-        )
+            deductedScore = statistics.deductedScore,
+            baseRemoteRevision = statistics.remoteRevision
+        ).let { it.copy(baseRemoteDigest = UsageSyncIdentity.digest(UsageSyncIdentity.payload(it))) }
     }
 }
 
@@ -200,4 +212,9 @@ interface UsageSnapshotStore {
     suspend fun seedIfAbsent(snapshot: UsageSnapshot)
     suspend fun pending(userId: String, limit: Int): List<UsageSnapshot>
     suspend fun markSynced(userId: String, date: String, revision: Long)
+    suspend fun acknowledgeRemote(snapshot: UsageSnapshot) = markSynced(snapshot.userId, snapshot.date, snapshot.revision)
+    suspend fun reconcileRemote(userId: String, statistics: DailyStatistics): UsageSnapshot {
+        seedIfAbsent(UsageSnapshot.fromDaily(userId, statistics))
+        return get(userId, statistics.date)?.reconcile(statistics) ?: UsageSnapshot.fromDaily(userId, statistics)
+    }
 }

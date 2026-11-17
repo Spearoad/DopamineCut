@@ -28,6 +28,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 interface AppDependencies {
+    val usageSync: com.example.dopaminecut2.statistics.UsageSyncCoordinator
+        get() = error("Usage sync is not configured")
+    val usageSyncSchedule: com.example.dopaminecut2.statistics.UsageSyncSchedule
+        get() = error("Usage sync schedule is not configured")
     val habitStore: com.example.dopaminecut2.data.local.HabitStore
     val habitInsights: com.example.dopaminecut2.statistics.HabitInsightsRepository
     val dataControls: com.example.dopaminecut2.data.repository.DataControls
@@ -77,7 +81,9 @@ class AppContainer(context: Context) : AppDependencies {
     override val applicationScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     override val measurementPermissionChecker = MeasurementPermissionChecker(appContext)
     override val batchContentClassifier: BatchContentClassifier = RetryingBatchContentClassifier(
-        CallableBatchContentClassifier(functions, authRepository::currentUserId),
+        CallableBatchContentClassifier(functions, authRepository::currentUserId) { payload ->
+            com.example.dopaminecut2.logic.ai.OcrRequestDiagnostic.record(appContext, payload)
+        },
         currentUserId = authRepository::currentUserId
     )
     override val usageStatisticsManager = UsageStatisticsManager(
@@ -85,6 +91,11 @@ class AppContainer(context: Context) : AppDependencies {
         snapshotStore = localDataSource,
         wallClock = wallClock
     )
+    override val usageSyncSchedule by lazy { com.example.dopaminecut2.statistics.AndroidUsageSyncSchedule(appContext) }
+    override val usageSync by lazy { com.example.dopaminecut2.statistics.UsageSyncCoordinator(
+        usageSyncSchedule, authRepository::currentUserId,
+        upload = { uid -> dataControls.withUsageSync(uid) { usageStatisticsManager.retryPending(uid) } },
+        onUploaded = { (userRepository as UserRepository).clearStatisticsCache(it) }) }
 
     private companion object {
         const val FUNCTIONS_REGION = "asia-northeast3"

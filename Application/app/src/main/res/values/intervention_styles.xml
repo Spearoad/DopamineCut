@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Widget.DopamineCut.InterventionCard" parent="Widget.DopamineCut.PrototypeCard">
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">10dp</item>
+    </style>
+    <style name="Widget.DopamineCut.InterventionChoice" parent="Widget.Material3.CompoundButton.RadioButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/ui_text_primary</item>
+    </style>
+    <style name="Widget.DopamineCut.InterventionBody" parent="Widget.DopamineCut.BodySpacing">
+        <item name="android:layout_marginTop">0dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+    <style name="Widget.DopamineCut.InterventionPrimary" parent="Widget.DopamineCut.PrototypePrimary">
+        <item name="android:textSize">14sp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+</resources>

@@ -23,7 +23,8 @@ class SettingsViewModel(
     private val permissionChecker: MeasurementPermissionChecker,
     private val notificationSettingsStore: NotificationSettingsStore,
     private val habits: com.example.dopaminecut2.data.local.HabitStore? = null,
-    private val dataControls: com.example.dopaminecut2.data.repository.DataControls? = null
+    private val dataControls: com.example.dopaminecut2.data.repository.DataControls? = null,
+    private val syncUsage: suspend (String) -> com.example.dopaminecut2.statistics.UsageSyncResult = { com.example.dopaminecut2.statistics.UsageSyncResult(failed = true) }
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -36,6 +37,7 @@ class SettingsViewModel(
             is SettingsAction.DeleteRecords -> deleteRecords(action.all)
             SettingsAction.Refresh -> refresh()
             SettingsAction.Logout -> logout()
+            SettingsAction.SyncUsage -> synchronizeUsage()
             is SettingsAction.FinishMeasurementSetup -> finishMeasurement(action.deferred)
             SettingsAction.ClearMessage -> _uiState.value = _uiState.value.copy(message = null)
             is SettingsAction.SetNotification -> saveNotification(action.option, action.enabled)
@@ -144,13 +146,39 @@ class SettingsViewModel(
     private fun logout() {
         if (_uiState.value.isLoggingOut) return
         _uiState.value = _uiState.value.copy(isLoggingOut = true, message = null)
-        authRepository.logout()
+        viewModelScope.launch {
+            val uid = authRepository.currentUserId()
+            if (uid != null) {
+                try {
+                    kotlinx.coroutines.withTimeoutOrNull(12_000L) {
+                        dataControls?.quiesceService?.invoke()
+                        syncUsage(uid)
+                    }
+                } catch (cancelled: CancellationException) { throw cancelled
+                } catch (_: Exception) { /* Persistent dirty records remain associated with the old uid. */ }
+            }
+            authRepository.logout()
             .onFailure { error ->
                 _uiState.value = _uiState.value.copy(
                     isLoggingOut = false,
                     message = error.localizedMessage ?: "로그아웃하지 못했습니다."
                 )
             }
+        }
+    }
+    private fun synchronizeUsage() {
+        val uid = authRepository.currentUserId() ?: return
+        if (_uiState.value.isSyncingUsage || _uiState.value.isChangingData || _uiState.value.isLoggingOut) return
+        _uiState.value = _uiState.value.copy(isSyncingUsage = true)
+        viewModelScope.launch {
+            try {
+                val result = kotlinx.coroutines.withTimeoutOrNull(120_000L) { syncUsage(uid) }
+                if (authRepository.currentUserId() == uid) _uiState.value = _uiState.value.copy(message = when {
+                    result == null || result.failed -> "동기화하지 못한 기록은 기기에 보관됩니다. 네트워크 또는 서버 기록 충돌을 확인해 주세요."
+                    else -> "사용 기록 동기화 완료 · ${result.synced}일 반영"
+                })
+            } finally { _uiState.value = _uiState.value.copy(isSyncingUsage = false) }
+        }
     }
     private fun updateAnalysis(action: SettingsAction.SetAnalysis) {
         val uid = authRepository.currentUserId() ?: return
