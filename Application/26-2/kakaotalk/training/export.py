@@ -25,7 +25,7 @@ from common import (IMAGENET_MEAN, IMAGENET_STD, INPUT_SIZE, LABELS, ROI_DESTINA
 from train import build_model
 
 ROOT = Path(__file__).resolve().parent
-ASSETS = ROOT.parent.parent / "app" / "src" / "main" / "assets" / "models"
+ASSETS = ROOT.parents[2] / "app" / "src" / "main" / "assets" / "models"  # Application/app/...
 MODEL_NAME = "kakaotalk_shortform_state"
 
 

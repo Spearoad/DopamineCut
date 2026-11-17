@@ -19,9 +19,9 @@ class KakaotalkOnDeviceClassifierInstrumentedTest {
     fun modelAssetLoadsAndRunsOnAndroid() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val installed = context.assets.list("models")?.contains("kakaotalk_shortform_state.onnx") == true
-        assumeTrue("KakaoTalk 모델이 아직 설치되지 않았습니다 (ml/kakaotalk/export.py --install)", installed)
+        assumeTrue("KakaoTalk 모델이 아직 설치되지 않았습니다 (26-2/kakaotalk/training/export.py --install)", installed)
 
-        // ml/kakaotalk/parity.py와 같은 결정적 패턴. Python ONNX 결과와 로그의 확률을 비교할 수 있다.
+        // 26-2/kakaotalk/training/parity.py와 같은 결정적 패턴. Python ONNX 결과와 로그의 확률을 비교할 수 있다.
         val width = 1080
         val height = 2400
         val pixels = IntArray(width * height) { index ->
