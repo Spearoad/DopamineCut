@@ -5,6 +5,4 @@
 <br>
 
 
-#### 👉 **[DopamineCut 설계 요구사항 문서(DRD) 열람하기](./DRD-Documents)**
-#### 👉 **[DopamineCut 설계 명세 문서(DSD) 열람하기](./DSD-Documents)**
-#### 👉 **[DopamineCut 구현 내용 (Application) 열람하기](./Application)**
+#### 👉 **[DopamineCut 작업 문서 내용 열람하기](./Application/26-2)**
