@@ -38,13 +38,20 @@ class InstagramRecognitionPipeline(private val scope: CoroutineScope, private va
             publish(InstagramRecognitionState(generation = generation, reason = decision.reason))
             return
         }
-        val key = decision.contentKey ?: return
+        // 댓글·공유창이 열렸을 때 / 광고가 나왔을 때 숏폼 영상 수가 증가하지 않도록(새 키를 채택하지 않도록) decision.paused 코드 이동
         if (decision.paused) {
+            if (state.contentKey == null) return
             if (state.screen != ShortformScreenState.OVERLAY) invalidate()
-            publish(state.copy(screen = ShortformScreenState.OVERLAY, contentKey = key,
-                paused = true, generation = generation, reason = decision.reason))
+
+            publish(state.copy(
+                screen = ShortformScreenState.OVERLAY,
+                paused = true,
+                generation = generation,
+                reason = decision.reason ))
             return
         }
+        val key = decision.contentKey ?: return
+
         if (state.contentKey != key) {
             invalidate()
             failures = 0
@@ -59,8 +66,17 @@ class InstagramRecognitionPipeline(private val scope: CoroutineScope, private va
         when (val command = manager.contentTrackingCommand(snapshot, ContentTrackingContext(
             key, state.contentKey, state.kind, job?.isActive == true, nonReelFresh))) {
             ContentTrackingCommand.RetryClassification, is ContentTrackingCommand.BeginClassification -> requestInference(key)
-            is ContentTrackingCommand.Track -> if (command.kind != state.kind)
-                publish(state.copy(kind = command.kind, paused = command.kind != ShortformContentKind.NORMAL))
+            // 같은 부류가 적용되었더라도, 취소 요청이 있으면 진행 중인 CV의 토큰을 무효화해야하므로 코드 내용 변경
+            is ContentTrackingCommand.Track -> {
+                if (command.cancelInference && job?.isActive == true) invalidate()
+                if (command.kind != state.kind || state.generation != generation) {
+                    publish(state.copy(
+                        kind = command.kind,
+                        paused = command.kind != ShortformContentKind.NORMAL,
+                        generation = generation
+                    ))
+                }
+            }
             ContentTrackingCommand.Wait -> Unit
         }
     }

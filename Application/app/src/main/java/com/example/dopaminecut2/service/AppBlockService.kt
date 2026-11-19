@@ -583,11 +583,21 @@ class AppBlockService : AccessibilityService() {
 
     private fun applyInstagramState(state: InstagramRecognitionState) {
         if (currentAppManager?.platform != SupportedPlatform.INSTAGRAM) return
-        if (currentContentKey != state.contentKey || currentScreenState != state.screen) {
+
+        // 화면이 바뀐 상황 vs 영상이 바뀐 상황 을 구분하기 위해 코드 추가
+        val identityChanged = currentContentKey != state.contentKey
+        val screenChanged = currentScreenState != state.screen
+
+        if (identityChanged || screenChanged) {
             screenGeneration++
             contentOcrJob?.cancel()
+            contentOcrJob = null
+        }
+
+        if (identityChanged || state.screen == ShortformScreenState.OUTSIDE) {
             clearLatestOcr()
         }
+
         if (currentContentKey != state.contentKey)
             viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
         currentContentKey = state.contentKey

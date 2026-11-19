@@ -27,7 +27,11 @@ class InstagramManager : BaseAppManager() {
     override fun isAdContent(snapshot: ScreenSnapshot) = extractor.isExplicitAd(snapshot)
 
     fun observeTracking(snapshot: ScreenSnapshot, nowMs: Long): InstagramTrackingDecision {
-        val detection = detector.detect(snapshot)
+        // InstagramDetection.detect() 함수 시그니처 변경으로 인한 코드 추가 (hasActiveReel 추가)
+        val detection = detector.detect(
+            snapshot,
+            hasActiveReel = coordinator.hasActiveReel
+        )
         val identity = if (detection.state == ShortformScreenState.INSIDE) extractor.extract(snapshot) else null
         return coordinator.observe(detection.state, identity?.contentKey, isAdContent(snapshot), nowMs)
     }

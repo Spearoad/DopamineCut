@@ -19,7 +19,7 @@ object InstagramUiRules {
 }
 
 class InstagramEntryDetector {
-    fun detect(snapshot: ScreenSnapshot): ShortformScreenDetection {
+    fun detect(snapshot: ScreenSnapshot, hasActiveReel: Boolean = false): ShortformScreenDetection {
         val structural = InstagramUiRules.resource(snapshot, InstagramUiRules.players)
         val overlayIds = InstagramUiRules.overlays + setOf(
             "comment_composer_parent_updated", "layout_comment_thread_edittext_multiline"
@@ -32,6 +32,21 @@ class InstagramEntryDetector {
         if (structural) evidence += "instagram_player"
         matchedOverlayIds.forEach { evidence += "overlay_id:$it" }
         dialogClasses.forEach { evidence += "overlay_class:$it" }
+        val hasSpecificSharePanel = InstagramUiRules.resource(
+            snapshot, setOf("share_sheet")
+        )
+
+        // 댓글·공유창을 켰을 때 vs 앱 이탈했을 때 를 구분하기 위한 조건 추가
+        val hasSpecificCommentPanel =
+            InstagramUiRules.resource(snapshot, setOf("comment_composer_parent_updated")) &&
+                    InstagramUiRules.resource(snapshot, setOf("layout_comment_thread_edittext_multiline"))
+
+        if (!structural && hasActiveReel &&
+            (hasSpecificSharePanel || hasSpecificCommentPanel)
+        ) {
+            evidence += "instagram_overlay_with_active_reel"
+            return ShortformScreenDetection(ShortformScreenState.OVERLAY, 90f, evidence)
+        }
         if (structural && overlay) return ShortformScreenDetection(ShortformScreenState.OVERLAY, .90f, evidence)
         if (structural) return ShortformScreenDetection(ShortformScreenState.INSIDE, .90f, evidence)
         // Merely seeing the Reels tab or a feed video must never qualify a viewing session.
@@ -123,6 +138,7 @@ class InstagramTrackingCoordinator(
     private var pendingSince = 0L
     private var lastReliable: Long? = null
     private var lastNow: Long? = null
+    val hasActiveReel: Boolean get() = active != null
     init { require(settleMs > 0 && evidenceGraceMs >= settleMs) }
 
     fun observe(state: ShortformScreenState, key: String?, explicitAd: Boolean, nowMs: Long): InstagramTrackingDecision {
