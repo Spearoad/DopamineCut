@@ -3,543 +3,1065 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ui_background"
+    android:background="#F7F6FA"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:orientation="vertical">
 
-        <TextView
-            style="@style/TextAppearance.DopamineCut.Caption"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_badge_soft"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="4dp"
-            android:text="목표 세부 설정"
-            android:textColor="@color/ui_primary"
-            android:textStyle="bold" />
+        <!-- 상단 앱 바 (< 목표 세부 설정) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="#F3F1F8"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp">
 
-        <TextView
-            style="@style/TextAppearance.DopamineCut.Display"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="어떤 사용을\n줄여볼까요?" />
+            <ImageButton
+                android:id="@+id/btn_back"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="뒤로 가기"
+                android:src="@drawable/ic_arrow_back_24"
+                app:tint="#1E1B2E" />
 
-        <TextView
-            style="@style/TextAppearance.DopamineCut.Caption"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="여러 목표를 함께 선택할 수 있어요."
-            android:textColor="@color/ui_text_secondary" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/pretendard"
+                android:text="목표 세부 설정"
+                android:textColor="#1E1B2E"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/card_time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/bg_modern_card"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="20dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="28dp">
 
-            <CheckBox
-                android:id="@+id/metric_time"
-                android:layout_width="match_parent"
+            <!-- 페이지 타이틀 & 서브타이틀 -->
+            <TextView
+                android:id="@+id/tv_goal_metric_title"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/pretendard"
-                android:minHeight="48dp"
                 android:text="숏폼 시청 시간"
-                android:textColor="@color/ui_text_primary"
-                android:textSize="16sp"
+                android:textColor="#1E1B2E"
+                android:textSize="23sp"
                 android:textStyle="bold" />
 
             <TextView
-                style="@style/TextAppearance.DopamineCut.Caption"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:text="숏폼을 보는 시간을 줄여요."
-                android:textColor="@color/ui_text_secondary" />
-
-            <TextView
-                android:id="@+id/summary_time"
-                style="@style/TextAppearance.DopamineCut.Display"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/ui_primary"
-                android:textSize="22sp" />
-
-            <LinearLayout
-                android:id="@+id/averages_time"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:orientation="vertical" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="end">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/detail_time"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="0dp"
-                    android:text="세부 설정 ›"
-                    android:textColor="@color/ui_primary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/card_count"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_modern_card"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <CheckBox
-                android:id="@+id/metric_count"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/pretendard"
-                android:minHeight="48dp"
-                android:text="숏폼 시청 영상 수"
-                android:textColor="@color/ui_text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                style="@style/TextAppearance.DopamineCut.Caption"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:text="넘겨 보는 영상 수를 줄여요."
-                android:textColor="@color/ui_text_secondary" />
-
-            <TextView
-                android:id="@+id/summary_count"
-                style="@style/TextAppearance.DopamineCut.Display"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/ui_primary"
-                android:textSize="22sp" />
-
-            <LinearLayout
-                android:id="@+id/averages_count"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:orientation="vertical" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="end">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/detail_count"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="0dp"
-                    android:text="세부 설정 ›"
-                    android:textColor="@color/ui_primary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/card_app_time"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_modern_card"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <CheckBox
-                android:id="@+id/metric_app_time"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/pretendard"
-                android:minHeight="48dp"
-                android:text="앱 사용 시간"
-                android:textColor="@color/ui_text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                style="@style/TextAppearance.DopamineCut.Caption"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:text="선택한 앱의 전체 사용을 줄여요."
-                android:textColor="@color/ui_text_secondary" />
-
-            <TextView
-                android:id="@+id/summary_app_time"
-                style="@style/TextAppearance.DopamineCut.Display"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/ui_primary"
-                android:textSize="22sp" />
-
-            <LinearLayout
-                android:id="@+id/averages_app_time"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:orientation="vertical" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="end">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/detail_app_time"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="0dp"
-                    android:text="세부 설정 ›"
-                    android:textColor="@color/ui_primary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <TextView
-            style="@style/TextAppearance.DopamineCut.Caption"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="숏폼 시간과 앱 시간의 감소량은 합산하지 않아요."
-            android:textColor="@color/ui_text_secondary" />
-
-        <LinearLayout
-            android:id="@+id/detail_panel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/bg_modern_card"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/detail_tabs"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:selectionRequired="true"
-                app:singleSelection="true">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/tab_time"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minWidth="0dp"
-                    android:paddingLeft="4dp"
-                    android:paddingRight="4dp"
-                    android:text="숏폼 시간"
-                    android:textSize="12sp"
-                    app:strokeColor="@color/ui_outline" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/tab_count"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minWidth="0dp"
-                    android:paddingLeft="4dp"
-                    android:paddingRight="4dp"
-                    android:text="영상 수"
-                    android:textSize="12sp"
-                    app:strokeColor="@color/ui_outline" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/tab_app_time"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minWidth="0dp"
-                    android:paddingLeft="4dp"
-                    android:paddingRight="4dp"
-                    android:text="앱 시간"
-                    android:textSize="12sp"
-                    app:strokeColor="@color/ui_outline" />
-            </com.google.android.material.button.MaterialButtonToggleGroup>
-
-            <TextView
-                android:id="@+id/tv_editing_card"
-                style="@style/TextAppearance.DopamineCut.Headline"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp" />
-
-            <TextView
-                style="@style/TextAppearance.DopamineCut.Headline"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/target_apps" />
-
-            <CheckBox
-                android:id="@+id/cb_youtube"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/pretendard"
-                android:minHeight="48dp"
-                android:text="@string/platform_youtube_shorts"
-                android:textColor="@color/ui_text_primary" />
-
-            <CheckBox
-                android:id="@+id/cb_instagram"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/pretendard"
-                android:minHeight="48dp"
-                android:text="@string/platform_instagram_reels"
-                android:textColor="@color/ui_text_primary" />
-
-            <CheckBox
-                android:id="@+id/cb_kakaotalk"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/pretendard"
-                android:minHeight="48dp"
-                android:text="@string/platform_kakaotalk"
-                android:textColor="@color/ui_text_primary" />
-
-            <TextView
-                style="@style/TextAppearance.DopamineCut.Headline"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="한도 배분" />
-
-            <TextView
-                style="@style/TextAppearance.DopamineCut.Caption"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="선택한 앱 합계로 관리\n선택 앱의 사용량을 합쳐 한도와 비교해요."
-                android:textColor="@color/ui_text_secondary" />
+                android:fontFamily="@font/pretendard"
+                android:text="요일에 맞게 목표를 조정해요."
+                android:textColor="#6E6A7C"
+                android:textSize="13sp" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/target_time"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:hint="@string/goal_target_watch_time"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="@color/ui_primary"
-                app:hintTextColor="@color/ui_primary">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_time"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/pretendard"
-                    android:inputType="number"
-                    android:maxLength="4"
-                    android:textColor="@color/ui_text_primary" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/target_count"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:hint="@string/goal_target_video_count"
-                android:visibility="gone"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="@color/ui_primary"
-                app:hintTextColor="@color/ui_primary">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_count"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/pretendard"
-                    android:inputType="number"
-                    android:maxLength="3"
-                    android:textColor="@color/ui_text_primary" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/target_app_time"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:hint="@string/goal_target_app_time"
-                android:visibility="gone"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="@color/ui_primary"
-                app:hintTextColor="@color/ui_primary">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_app_time"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/pretendard"
-                    android:inputType="number"
-                    android:maxLength="4"
-                    android:textColor="@color/ui_text_primary" />
-            </com.google.android.material.textfield.TextInputLayout>
-
+            <!-- ================= 카드 1: 합산하기/개별 설정 & 공통 개입 방식 ================= -->
             <LinearLayout
-                android:id="@+id/goal_card_details"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-            <TextView
-                style="@style/TextAppearance.DopamineCut.Headline"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/goal_intervention_label" />
-
-            <Spinner
-                android:id="@+id/spinner_intervention"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="18dp"
                 android:background="@drawable/bg_modern_card"
-                android:entries="@array/goal_intervention_options"
-                android:padding="8dp" />
+                android:orientation="vertical"
+                android:padding="18dp">
 
-            <TextView
-                android:id="@+id/tv_intervention_description"
-                style="@style/TextAppearance.DopamineCut.Caption"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:accessibilityLiveRegion="polite"
-                android:text="@string/goal_intervention_record_description"
-                android:textColor="@color/ui_text_secondary" />
+                <!-- 세그먼트 컨트롤: 합산하기 | 개별 설정 -->
+                <LinearLayout
+                    android:id="@+id/scope_segment_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:background="@drawable/bg_segmented_track"
+                    android:orientation="horizontal"
+                    android:padding="4dp">
 
-            <TextView
-                style="@style/TextAppearance.DopamineCut.Caption"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/goal_intervention_notification_notice"
-                android:textColor="@color/ui_text_secondary" />
+                    <TextView
+                        android:id="@+id/tab_scope_combined"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_segmented_thumb"
+                        android:elevation="1dp"
+                        android:fontFamily="@font/pretendard"
+                        android:gravity="center"
+                        android:text="합산하기"
+                        android:textColor="#5B3FD9"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
-            <TextView
-                style="@style/TextAppearance.DopamineCut.Caption"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/goal_intervention_not_connected"
-                android:textColor="@color/ui_text_secondary" />
+                    <TextView
+                        android:id="@+id/tab_scope_individual"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/pretendard"
+                        android:gravity="center"
+                        android:text="개별 설정"
+                        android:textColor="#5E5A6E"
+                        android:textSize="14sp" />
+                </LinearLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:hint="연속 숏폼 시청 휴식 안내 (분, 0은 끄기)"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="@color/ui_primary"
-                app:hintTextColor="@color/ui_primary">
+                <!-- 대상 앱 안내 문구 -->
+                <TextView
+                    android:id="@+id/tv_scope_description"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:fontFamily="@font/pretendard"
+                    android:text="YouTube · Instagram · KakaoTalk의 사용량을 합산해요."
+                    android:textColor="#5E5A6E"
+                    android:textSize="13sp" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_continuous_break"
+                <!-- 개별 설정 선택 시 노출되는 앱 전환 탭 -->
+                <LinearLayout
+                    android:id="@+id/individual_app_segment"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_segmented_track"
+                    android:orientation="horizontal"
+                    android:padding="3dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tab_app_youtube"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_segmented_thumb"
+                        android:fontFamily="@font/pretendard"
+                        android:gravity="center"
+                        android:text="YouTube"
+                        android:textColor="#5B3FD9"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tab_app_instagram"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/pretendard"
+                        android:gravity="center"
+                        android:text="Instagram"
+                        android:textColor="#5E5A6E"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tab_app_kakaotalk"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/pretendard"
+                        android:gravity="center"
+                        android:text="KakaoTalk"
+                        android:textColor="#5E5A6E"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- 구분선 -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="16dp"
+                    android:background="#ECE9F4" />
+
+                <!-- 공통 개입 방식 행 -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/pretendard"
-                    android:inputType="number"
-                    android:maxLength="3"
-                    android:textColor="@color/ui_text_primary" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-            <TextView
-                style="@style/TextAppearance.DopamineCut.Caption"
-                android:layout_width="wrap_content"
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.42"
+                        android:fontFamily="@font/pretendard"
+                        android:text="공통 개입 방식"
+                        android:textColor="#5E5A6E"
+                        android:textSize="13sp" />
+
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_weight="0.58"
+                        android:background="@drawable/bg_dropdown_box">
+
+                        <Spinner
+                            android:id="@+id/spinner_intervention"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@android:color/transparent"
+                            android:entries="@array/goal_intervention_options"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="36dp" />
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="end|center_vertical"
+                            android:layout_marginEnd="12dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_expand_more_24"
+                            app:tint="#1E1B2E" />
+                    </FrameLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ================= 카드 2: 합산 목표 · 적용 일정 ================= -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="숏폼 시간 목표에만 적용합니다. 기록만 보기에서는 안내하지 않으며, 목표 진행 알림을 허용해야 합니다."
-                android:textColor="@color/ui_text_secondary" />
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_modern_card"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <TextView
+                    android:id="@+id/tv_schedule_card_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/pretendard"
+                    android:text="합산 목표 · 적용 일정"
+                    android:textColor="#1E1B2E"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <!-- 세그먼트 컨트롤: 매일 동일 | 요일별 설정 -->
+                <LinearLayout
+                    android:id="@+id/schedule_segment_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_segmented_track"
+                    android:orientation="horizontal"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/tab_schedule_daily"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/pretendard"
+                        android:gravity="center"
+                        android:text="매일 동일"
+                        android:textColor="#5E5A6E"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tab_schedule_weekly"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_segmented_thumb"
+                        android:elevation="1dp"
+                        android:fontFamily="@font/pretendard"
+                        android:gravity="center"
+                        android:text="요일별 설정"
+                        android:textColor="#5B3FD9"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- [모드 A] 매일 동일 입력 영역 -->
+                <LinearLayout
+                    android:id="@+id/layout_daily_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/pretendard"
+                        android:text="하루 목표 한도"
+                        android:textColor="#1E1B2E"
+                        android:textSize="14sp" />
+
+                    <EditText
+                        android:id="@+id/et_daily_target"
+                        android:layout_width="84dp"
+                        android:layout_height="42dp"
+                        android:background="@drawable/bg_input_soft"
+                        android:fontFamily="@font/pretendard"
+                        android:gravity="end|center_vertical"
+                        android:importantForAutofill="no"
+                        android:inputType="number"
+                        android:maxLength="4"
+                        android:paddingHorizontal="12dp"
+                        android:text="30"
+                        android:textColor="#1E1B2E"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_daily_unit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="@font/pretendard"
+                        android:text="분"
+                        android:textColor="#5E5A6E"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- [모드 B] 요일별 설정 입력 영역 -->
+                <LinearLayout
+                    android:id="@+id/layout_weekly_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical">
+
+                    <!-- 일괄 입력 바 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/pretendard"
+                            android:text="일괄 입력"
+                            android:textColor="#5E5A6E"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/et_bulk_target"
+                            android:layout_width="48dp"
+                            android:layout_height="36dp"
+                            android:layout_marginStart="6dp"
+                            android:background="@drawable/bg_input_soft"
+                            android:fontFamily="@font/pretendard"
+                            android:gravity="center"
+                            android:importantForAutofill="no"
+                            android:inputType="number"
+                            android:maxLength="4"
+                            android:text="30"
+                            android:textColor="#1E1B2E"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tv_bulk_unit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:fontFamily="@font/pretendard"
+                            android:text="분"
+                            android:textColor="#5E5A6E"
+                            android:textSize="13sp" />
+
+                        <!-- 평일 적용 체크 버튼 (초기: 미선택 상태) -->
+                        <LinearLayout
+                            android:id="@+id/btn_apply_weekday"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginStart="6dp"
+                            android:background="@drawable/bg_outline_chip_btn"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="10dp">
+
+                            <ImageView
+                                android:id="@+id/iv_check_weekday"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_marginEnd="3dp"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_check_16"
+                                android:visibility="gone"
+                                app:tint="#5B3FD9" />
+
+                            <TextView
+                                android:id="@+id/tv_apply_weekday"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/pretendard"
+                                android:maxLines="1"
+                                android:text="평일 적용"
+                                android:textColor="#5B3FD9"
+                                android:textSize="11.5sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- 주말 적용 체크 버튼 (초기: 미선택 상태) -->
+                        <LinearLayout
+                            android:id="@+id/btn_apply_weekend"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginStart="5dp"
+                            android:background="@drawable/bg_outline_chip_btn"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="10dp">
+
+                            <ImageView
+                                android:id="@+id/iv_check_weekend"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_marginEnd="3dp"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_check_16"
+                                android:visibility="gone"
+                                app:tint="#5B3FD9" />
+
+                            <TextView
+                                android:id="@+id/tv_apply_weekend"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/pretendard"
+                                android:maxLines="1"
+                                android:text="주말 적용"
+                                android:textColor="#5B3FD9"
+                                android:textSize="11.5sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 구분선 -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="6dp"
+                        android:background="#ECE9F4" />
+
+                    <!-- 월요일 -->
+                    <LinearLayout
+                        android:id="@+id/row_day_mon"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <CheckBox
+                            android:id="@+id/cb_day_mon"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:button="@drawable/selector_checkbox_purple"
+                            android:checked="true"
+                            android:fontFamily="@font/pretendard"
+                            android:paddingStart="10dp"
+                            android:text="월요일"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp"
+                            app:buttonTint="@null"
+                            app:useMaterialThemeColors="false" />
+
+                        <EditText
+                            android:id="@+id/et_day_mon"
+                            android:layout_width="80dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_input_soft"
+                            android:fontFamily="@font/pretendard"
+                            android:gravity="end|center_vertical"
+                            android:importantForAutofill="no"
+                            android:inputType="number"
+                            android:maxLength="4"
+                            android:paddingHorizontal="12dp"
+                            android:text="30"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tv_unit_mon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/pretendard"
+                            android:text="분"
+                            android:textColor="#5E5A6E"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- 화요일 -->
+                    <LinearLayout
+                        android:id="@+id/row_day_tue"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <CheckBox
+                            android:id="@+id/cb_day_tue"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:button="@drawable/selector_checkbox_purple"
+                            android:checked="true"
+                            android:fontFamily="@font/pretendard"
+                            android:paddingStart="10dp"
+                            android:text="화요일"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp"
+                            app:buttonTint="@null"
+                            app:useMaterialThemeColors="false" />
+
+                        <EditText
+                            android:id="@+id/et_day_tue"
+                            android:layout_width="80dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_input_soft"
+                            android:fontFamily="@font/pretendard"
+                            android:gravity="end|center_vertical"
+                            android:importantForAutofill="no"
+                            android:inputType="number"
+                            android:maxLength="4"
+                            android:paddingHorizontal="12dp"
+                            android:text="30"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tv_unit_tue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/pretendard"
+                            android:text="분"
+                            android:textColor="#5E5A6E"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- 수요일 -->
+                    <LinearLayout
+                        android:id="@+id/row_day_wed"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <CheckBox
+                            android:id="@+id/cb_day_wed"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:button="@drawable/selector_checkbox_purple"
+                            android:checked="true"
+                            android:fontFamily="@font/pretendard"
+                            android:paddingStart="10dp"
+                            android:text="수요일"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp"
+                            app:buttonTint="@null"
+                            app:useMaterialThemeColors="false" />
+
+                        <EditText
+                            android:id="@+id/et_day_wed"
+                            android:layout_width="80dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_input_soft"
+                            android:fontFamily="@font/pretendard"
+                            android:gravity="end|center_vertical"
+                            android:importantForAutofill="no"
+                            android:inputType="number"
+                            android:maxLength="4"
+                            android:paddingHorizontal="12dp"
+                            android:text="30"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tv_unit_wed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/pretendard"
+                            android:text="분"
+                            android:textColor="#5E5A6E"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- 목요일 -->
+                    <LinearLayout
+                        android:id="@+id/row_day_thu"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <CheckBox
+                            android:id="@+id/cb_day_thu"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:button="@drawable/selector_checkbox_purple"
+                            android:checked="true"
+                            android:fontFamily="@font/pretendard"
+                            android:paddingStart="10dp"
+                            android:text="목요일"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp"
+                            app:buttonTint="@null"
+                            app:useMaterialThemeColors="false" />
+
+                        <EditText
+                            android:id="@+id/et_day_thu"
+                            android:layout_width="80dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_input_soft"
+                            android:fontFamily="@font/pretendard"
+                            android:gravity="end|center_vertical"
+                            android:importantForAutofill="no"
+                            android:inputType="number"
+                            android:maxLength="4"
+                            android:paddingHorizontal="12dp"
+                            android:text="30"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tv_unit_thu"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/pretendard"
+                            android:text="분"
+                            android:textColor="#5E5A6E"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- 금요일 -->
+                    <LinearLayout
+                        android:id="@+id/row_day_fri"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <CheckBox
+                            android:id="@+id/cb_day_fri"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:button="@drawable/selector_checkbox_purple"
+                            android:checked="true"
+                            android:fontFamily="@font/pretendard"
+                            android:paddingStart="10dp"
+                            android:text="금요일"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp"
+                            app:buttonTint="@null"
+                            app:useMaterialThemeColors="false" />
+
+                        <EditText
+                            android:id="@+id/et_day_fri"
+                            android:layout_width="80dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_input_soft"
+                            android:fontFamily="@font/pretendard"
+                            android:gravity="end|center_vertical"
+                            android:importantForAutofill="no"
+                            android:inputType="number"
+                            android:maxLength="4"
+                            android:paddingHorizontal="12dp"
+                            android:text="30"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tv_unit_fri"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/pretendard"
+                            android:text="분"
+                            android:textColor="#5E5A6E"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- 토요일 -->
+                    <LinearLayout
+                        android:id="@+id/row_day_sat"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <CheckBox
+                            android:id="@+id/cb_day_sat"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:button="@drawable/selector_checkbox_purple"
+                            android:checked="true"
+                            android:fontFamily="@font/pretendard"
+                            android:paddingStart="10dp"
+                            android:text="토요일"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp"
+                            app:buttonTint="@null"
+                            app:useMaterialThemeColors="false" />
+
+                        <EditText
+                            android:id="@+id/et_day_sat"
+                            android:layout_width="80dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_input_soft"
+                            android:fontFamily="@font/pretendard"
+                            android:gravity="end|center_vertical"
+                            android:importantForAutofill="no"
+                            android:inputType="number"
+                            android:maxLength="4"
+                            android:paddingHorizontal="12dp"
+                            android:text="60"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tv_unit_sat"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/pretendard"
+                            android:text="분"
+                            android:textColor="#5E5A6E"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- 일요일 -->
+                    <LinearLayout
+                        android:id="@+id/row_day_sun"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <CheckBox
+                            android:id="@+id/cb_day_sun"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:button="@drawable/selector_checkbox_purple"
+                            android:checked="true"
+                            android:fontFamily="@font/pretendard"
+                            android:paddingStart="10dp"
+                            android:text="일요일"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp"
+                            app:buttonTint="@null"
+                            app:useMaterialThemeColors="false" />
+
+                        <EditText
+                            android:id="@+id/et_day_sun"
+                            android:layout_width="80dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_input_soft"
+                            android:fontFamily="@font/pretendard"
+                            android:gravity="end|center_vertical"
+                            android:importantForAutofill="no"
+                            android:inputType="number"
+                            android:maxLength="4"
+                            android:paddingHorizontal="12dp"
+                            android:text="60"
+                            android:textColor="#1E1B2E"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tv_unit_sun"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/pretendard"
+                            android:text="분"
+                            android:textColor="#5E5A6E"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ================= 카드 3: 공휴일 목표 예외 설정 ================= -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_modern_card"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <CheckBox
+                    android:id="@+id/cb_exclude_holidays"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:button="@drawable/selector_checkbox_purple"
+                    android:fontFamily="@font/pretendard"
+                    android:minHeight="36dp"
+                    android:paddingStart="10dp"
+                    android:text="공휴일에는 이 목표를 적용하지 않기"
+                    android:textColor="#1E1B2E"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:buttonTint="@null"
+                    app:useMaterialThemeColors="false" />
+
+                <TextView
+                    android:id="@+id/tv_holiday_description"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="@font/pretendard"
+                    android:text="선택한 요일의 목표를 공휴일에도 적용해요."
+                    android:textColor="#5E5A6E"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/pretendard"
+                    android:text="대한민국 공휴일·대체공휴일 기준"
+                    android:textColor="#8E8A9C"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- 하단 목표 저장 버튼 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_save"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="22dp"
+                android:fontFamily="@font/pretendard"
+                android:text="목표 저장"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:backgroundTint="#5B3FD9"
+                app:cornerRadius="16dp" />
+
+            <!-- ================= 기존 GoalEditorFragment.kt ViewBinding 호환용 숨김 영역 ================= -->
+            <LinearLayout
+                android:id="@+id/legacy_binding_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/card_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/metric_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/summary_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <LinearLayout
+                        android:id="@+id/averages_time"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/detail_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/card_count"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/metric_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/summary_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <LinearLayout
+                        android:id="@+id/averages_count"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/detail_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/card_app_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/metric_app_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/summary_app_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <LinearLayout
+                        android:id="@+id/averages_app_time"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/detail_app_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/detail_panel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/detail_tabs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/tab_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/tab_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/tab_app_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    <TextView
+                        android:id="@+id/tv_editing_card"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <CheckBox
+                        android:id="@+id/cb_youtube"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <CheckBox
+                        android:id="@+id/cb_instagram"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <CheckBox
+                        android:id="@+id/cb_kakaotalk"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/target_time"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_time"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/target_count"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_count"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/target_app_time"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_app_time"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:id="@+id/goal_card_details"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/tv_intervention_description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_continuous_break"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_validation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/tv_unavailable"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_cancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/tv_validation"
-            style="@style/TextAppearance.DopamineCut.Caption"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:accessibilityLiveRegion="polite"
-            android:textColor="@color/ui_error" />
-
-        <TextView
-            android:id="@+id/tv_unavailable"
-            style="@style/TextAppearance.DopamineCut.Caption"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/ui_text_secondary" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_save"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="20dp"
-            android:enabled="false"
-            android:fontFamily="@font/pretendard"
-            android:text="@string/managed_goal_save"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            app:backgroundTint="@color/ui_primary"
-            app:cornerRadius="16dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_cancel"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/cancel"
-            android:textColor="@color/ui_text_secondary" />
-
     </LinearLayout>
 </ScrollView>
