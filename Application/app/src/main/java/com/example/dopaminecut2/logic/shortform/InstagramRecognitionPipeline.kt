@@ -60,7 +60,7 @@ class InstagramRecognitionPipeline(private val scope: CoroutineScope, private va
             publish(InstagramRecognitionState(ShortformScreenState.INSIDE, key,
                 generation = generation, reason = "AWAITING_CV"))
         } else publish(state.copy(screen = ShortformScreenState.INSIDE,
-            paused = state.kind != ShortformContentKind.NORMAL, reason = decision.reason))
+            paused = !countsWatchTime(state.kind), reason = decision.reason))
 
         val nonReelFresh = knownNonReel && lastAttempt?.let { now() - it < 15_000 } == true
         when (val command = manager.contentTrackingCommand(snapshot, ContentTrackingContext(
@@ -72,13 +72,21 @@ class InstagramRecognitionPipeline(private val scope: CoroutineScope, private va
                 if (command.kind != state.kind || state.generation != generation) {
                     publish(state.copy(
                         kind = command.kind,
-                        paused = command.kind != ShortformContentKind.NORMAL,
+                        paused = !countsWatchTime(command.kind),
                         generation = generation
                     ))
                 }
             }
             ContentTrackingCommand.Wait -> Unit
         }
+    }
+
+    // 숏폼 종류를 파악하기 위한 함수 추가
+    private fun countsWatchTime(kind: ShortformContentKind): Boolean = when (kind) {
+        ShortformContentKind.NORMAL,
+        ShortformContentKind.LIVE,
+        ShortformContentKind.PHOTO_POST -> true
+        else -> false
     }
 
     private fun requestInference(key: String) {
@@ -97,7 +105,7 @@ class InstagramRecognitionPipeline(private val scope: CoroutineScope, private va
                 knownNonReel = prediction?.uiClass?.isSafeNonReelScreen == true
                 val kind = prediction?.contentKind ?: ShortformContentKind.UNKNOWN
                 failures = if (kind == ShortformContentKind.UNKNOWN) failures + 1 else 0
-                publish(state.copy(kind = kind, paused = kind != ShortformContentKind.NORMAL,
+                publish(state.copy(kind = kind, paused = !countsWatchTime(kind),
                     reason = prediction?.uiClass?.name ?: "INFERENCE_UNAVAILABLE"))
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {
