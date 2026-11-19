@@ -49,6 +49,7 @@ import com.example.dopaminecut2.logic.shortform.KakaotalkOnDeviceContentClassifi
 import com.example.dopaminecut2.logic.shortform.KakaotalkFrameToken
 import com.example.dopaminecut2.logic.shortform.KakaotalkRecognitionPipeline
 import com.example.dopaminecut2.logic.shortform.KakaotalkRecognitionState
+import com.example.dopaminecut2.logic.shortform.KakaotalkSessionBinder
 import com.example.dopaminecut2.logic.shortform.InstagramRecognitionPipeline
 import com.example.dopaminecut2.logic.shortform.InstagramRecognitionState
 import com.example.dopaminecut2.logic.shortform.InstagramFrameToken
@@ -496,6 +497,7 @@ class AppBlockService : AccessibilityService() {
         }
         currentSnapshot = observation.snapshot ?: return
         if (manager.platform == SupportedPlatform.INSTAGRAM) logInstagramSnapshot(currentSnapshot)
+        if (manager.platform == SupportedPlatform.KAKAOTALK) logKakaotalkSnapshot(currentSnapshot)
         if (manager.platform == SupportedPlatform.YOUTUBE &&
             detectTrackingScreen(manager).state != ShortformScreenState.OVERLAY) {
             val nextLayout = contentRegionResolver.layoutKey(currentSnapshot)
@@ -534,17 +536,26 @@ class AppBlockService : AccessibilityService() {
 
 
     // Developer opt-in only. No persistence, network upload, or screenshot capture.
-    private var instagramDiagnosticLastMs = -2_000L
-    private var instagramDiagnosticSignature: String? = null
-    private var instagramDiagnosticSequence = 0L
+    private class UiSnapshotDiagnostic(val tag: String, val flagPrefix: String) {
+        var lastMs = -2_000L
+        var signature: String? = null
+        var sequence = 0L
+    }
+    private val instagramUiDiagnostic = UiSnapshotDiagnostic("InstagramUiDiagnostic", "instagram-diagnostics")
+    // 카카오톡 댓글·공유창의 실제 접근성 구조를 실기기에서 기록해 오버레이 판별 근거로 쓴다.
+    private val kakaotalkUiDiagnostic = UiSnapshotDiagnostic("KakaoUiDiagnostic", "kakaotalk-diagnostics")
     private var instagramTrackingDiagnosticSignature: String? = null
 
-    private fun logInstagramSnapshot(snapshot: ScreenSnapshot) {
-        if (!BuildConfig.DEBUG || !File(cacheDir, "instagram-diagnostics.enabled").exists()) return
+    private fun logInstagramSnapshot(snapshot: ScreenSnapshot) = logUiSnapshot(instagramUiDiagnostic, snapshot)
+
+    private fun logKakaotalkSnapshot(snapshot: ScreenSnapshot) = logUiSnapshot(kakaotalkUiDiagnostic, snapshot)
+
+    private fun logUiSnapshot(diagnostic: UiSnapshotDiagnostic, snapshot: ScreenSnapshot) {
+        if (!BuildConfig.DEBUG || !File(cacheDir, "${diagnostic.flagPrefix}.enabled").exists()) return
         val now = monotonicClock.nowMillis()
-        if (now - instagramDiagnosticLastMs < 2_000L) return
-        instagramDiagnosticLastMs = now
-        val includeText = File(cacheDir, "instagram-diagnostics-text.enabled").exists()
+        if (now - diagnostic.lastMs < 2_000L) return
+        diagnostic.lastMs = now
+        val includeText = File(cacheDir, "${diagnostic.flagPrefix}-text.enabled").exists()
         val rows = snapshot.elements.mapIndexed { index, element ->
             org.json.JSONObject().apply {
                 put("index", index)
@@ -567,14 +578,14 @@ class AppBlockService : AccessibilityService() {
         val signature = java.security.MessageDigest.getInstance("SHA-256")
             .digest((includeText.toString() + rows.joinToString("\n")).toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it.toInt() and 255) }
-        if (signature == instagramDiagnosticSignature) return
-        instagramDiagnosticSignature = signature
-        val sequence = ++instagramDiagnosticSequence
-        val detection = (currentAppManager as? InstagramManager)?.detectShortformScreen(snapshot)
-        Log.d("InstagramUiDiagnostic", "BEGIN seq=$sequence elapsedMs=$now count=${rows.size} " +
+        if (signature == diagnostic.signature) return
+        diagnostic.signature = signature
+        val sequence = ++diagnostic.sequence
+        val detection = currentAppManager?.detectShortformScreen(snapshot)
+        Log.d(diagnostic.tag, "BEGIN seq=$sequence elapsedMs=$now count=${rows.size} " +
                 "display=${snapshot.displayId} window=${snapshot.window} state=${detection?.state} evidence=${detection?.evidence} text=$includeText")
-        rows.forEach { row -> Log.d("InstagramUiDiagnostic", "seq=$sequence $row") }
-        Log.d("InstagramUiDiagnostic", "END seq=$sequence")
+        rows.forEach { row -> Log.d(diagnostic.tag, "seq=$sequence $row") }
+        Log.d(diagnostic.tag, "END seq=$sequence")
     }
 
     private fun updateInstagramTracking() {
@@ -789,37 +800,18 @@ class AppBlockService : AccessibilityService() {
 
     private fun applyKakaotalkState(state: KakaotalkRecognitionState) {
         if (currentAppManager?.platform != SupportedPlatform.KAKAOTALK) return
-        if (currentContentKey != state.contentKey || currentScreenState != state.screen) {
+        val change = KakaotalkSessionBinder.change(currentContentKey, currentScreenState, state)
+        if (change.newFrame) {
             screenGeneration++
             contentOcrJob?.cancel()
-            clearLatestOcr()
         }
-        if (currentContentKey != state.contentKey)
-            viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
+        // 댓글·공유창 진입·복귀에서는 같은 영상의 누적 OCR을 보존하고, 다른 영상·이탈에서만 버린다.
+        if (change.newVideo) clearLatestOcr()
         currentContentKey = state.contentKey
         currentContentKind = state.kind
         currentScreenState = state.screen
-        currentIsShortform = state.screen == ShortformScreenState.INSIDE &&
-                !state.paused && !state.excluded && state.kind == ShortformContentKind.NORMAL
-
-        when {
-            state.contentKey == null || state.excluded || state.kind == ShortformContentKind.AD ->
-                viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
-            state.paused -> viewTracker.setPaused(true)
-            state.kind == ShortformContentKind.UNKNOWN -> {
-                viewTracker.beginProvisional(SupportedPlatform.KAKAOTALK, state.contentKey)
-                viewTracker.setPaused(false)
-            }
-            else -> {
-                val provisionalId = viewTracker.activeViewSessionId()?.takeIf { viewTracker.isProvisional() }
-                val promoted = provisionalId != null &&
-                        viewTracker.resolveProvisional(provisionalId, state.kind, state.contentKey)
-                if (!promoted) viewTracker.onScreenChanged(true, SupportedPlatform.KAKAOTALK,
-                    state.contentKey, state.kind)
-                // Promotion may synchronously show an intervention and pause this session.
-                viewTracker.setPaused(goalPresenter.isShowing)
-            }
-        }
+        currentIsShortform = KakaotalkSessionBinder.isShortform(state)
+        KakaotalkSessionBinder.bind(viewTracker, state, change.newVideo) { goalPresenter.isShowing }
         if (BuildConfig.DEBUG) {
             val signature = "${state.reason}:${state.contentKey}:${state.generation}:${state.attempts}:${state.kind}:${state.paused}:${state.excluded}"
             if (signature != kakaotalkDiagnosticSignature) {
@@ -1264,6 +1256,12 @@ class AppBlockService : AccessibilityService() {
         if (BuildConfig.DEBUG && checkpoint.platform == SupportedPlatform.INSTAGRAM &&
             File(cacheDir, "instagram-diagnostics.enabled").exists()) {
             Log.d("InstagramTrackingDiagnostic", "CHECKPOINT session=${checkpoint.viewSessionId} " +
+                    "durationSec=${checkpoint.durationSec} count=${checkpoint.count}")
+        }
+        if (BuildConfig.DEBUG && checkpoint.platform == SupportedPlatform.KAKAOTALK &&
+            File(cacheDir, "${kakaotalkUiDiagnostic.flagPrefix}.enabled").exists()) {
+            Log.d("KakaoTrackingDiagnostic", "CHECKPOINT session=${checkpoint.viewSessionId} " +
+                    "kind=${checkpoint.contentKind} key=${checkpoint.contentKey.take(12)} " +
                     "durationSec=${checkpoint.durationSec} count=${checkpoint.count}")
         }
 
