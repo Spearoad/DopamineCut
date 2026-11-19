@@ -46,7 +46,9 @@ class ShortformSessionTracker(
     private val onSessionCompleted: (CompletedShortformSession) -> Unit,
     private val onProvisionalCheckpoint: (ProvisionalViewCheckpoint) -> Unit = {},
     private val onProvisionalSettled: (String) -> Unit = {},
-    private val admitNormalSession: (SupportedPlatform) -> Boolean = { true }
+    private val admitNormalSession: (SupportedPlatform) -> Boolean = { true },
+    private val admitRepeatedNormalSession: (SupportedPlatform) -> Boolean = admitNormalSession,
+    private val onQualifiedSession: (ShortformCountDelta) -> Unit = {}
 ) {
     private data class ActiveSession(
         val viewSessionId: String,
@@ -56,12 +58,35 @@ class ShortformSessionTracker(
         var startedAtMs: Long,
         var admissionPending: Boolean = false,
         var reportedCount: Long = 0L,
+        var countSuppressed: Boolean? = null,
+        var qualificationReported: Boolean = false,
         var checkpointDurationSec: Long = 0L,
         var pausedAtMs: Long? = null,
         var pausedDurationMs: Long = 0L
     )
 
     private var active: ActiveSession? = null
+    // Bounded, local-only history. Leaving a player does not erase recent counted videos.
+    private val recentCountedKeys = mutableMapOf<SupportedPlatform, LinkedHashSet<String>>()
+
+    fun clearRecentCountHistory() { recentCountedKeys.clear() }
+
+    private fun wasRecentlyCounted(platform: SupportedPlatform, key: String): Boolean =
+        recentCountedKeys[platform]?.contains(key) == true
+
+    private fun sessionResult(current: ActiveSession, durationSec: Long, commit: Boolean = false): ShortformCountResult {
+        val result = countingPolicy.result(current.contentKind, durationSec)
+        if (current.contentKind != ShortformContentKind.NORMAL || result.count == 0L) return result
+        val suppressed = current.countSuppressed ?: wasRecentlyCounted(current.platform, current.contentKey)
+        if (commit && current.countSuppressed == null) {
+            current.countSuppressed = suppressed
+            val keys = recentCountedKeys.getOrPut(current.platform) { linkedSetOf() }
+            keys.remove(current.contentKey)
+            keys.add(current.contentKey)
+            while (keys.size > 3) keys.remove(keys.first())
+        }
+        return if (suppressed) result.copy(count = 0L) else result
+    }
 
     fun activeViewSessionId(): String? = active?.viewSessionId
     fun isProvisional(): Boolean = active?.contentKind == ShortformContentKind.UNKNOWN
@@ -82,7 +107,9 @@ class ShortformSessionTracker(
         if (current.viewSessionId != expectedSessionId || current.contentKind != ShortformContentKind.UNKNOWN ||
             kind == ShortformContentKind.UNKNOWN || contentKey.isBlank()) return false
         if (kind == ShortformContentKind.NORMAL) {
-            val admitted = admitNormalSession(current.platform)
+            val admitted = if (wasRecentlyCounted(current.platform, contentKey)) {
+                admitRepeatedNormalSession(current.platform)
+            } else admitNormalSession(current.platform)
             if (active !== current) return false // An intervention can synchronously stop tracking.
             if (!admitted) {
                 current.admissionPending = true
@@ -113,7 +140,7 @@ class ShortformSessionTracker(
     /** Cumulative live progress; callers subtract their last checkpoint, never add it twice. */
     fun activeProgress(): ShortformSessionCheckpoint? = active?.let {
         val result = if (it.admissionPending) ShortformCountResult(0, 0)
-            else countingPolicy.result(it.contentKind, elapsedSec(it))
+            else sessionResult(it, elapsedSec(it))
         ShortformSessionCheckpoint(it.viewSessionId, it.platform, it.contentKey, it.contentKind, result.trackedDurationSec, result.count)
     }
 
@@ -188,7 +215,15 @@ class ShortformSessionTracker(
         reportCountDelta(current, durationSec)
     }
 
-    /** 댓글/공유 중에는 시간을 제외하되 동일 영상의 세션과 카운트는 유지한다. */
+    fun canContinueDuringInteraction(): Boolean = active?.let {
+        !it.admissionPending && it.contentKind in setOf(
+            ShortformContentKind.NORMAL, ShortformContentKind.LIVE, ShortformContentKind.PHOTO_POST)
+    } == true
+
+    /** Interaction panels suspend analysis, not the already confirmed video's viewing clock. */
+    fun onInteractionOverlay() { setPaused(!canContinueDuringInteraction()) }
+
+    /** Genuine uncertainty, screen-off and goal restrictions still pause the viewing clock. */
     fun setPaused(paused: Boolean) {
         val current = active ?: return
         if (!paused && current.admissionPending) return
@@ -226,7 +261,7 @@ class ShortformSessionTracker(
             }
             return
         }
-        val result = countingPolicy.result(current.contentKind, durationSec)
+        val result = sessionResult(current, durationSec, commit = true)
         reportCheckpoint(current, durationSec, force = true)
         reportCountDelta(current, durationSec)
         if (result.trackedDurationSec > 0L) {
@@ -244,7 +279,7 @@ class ShortformSessionTracker(
     }
 
     private fun reportCheckpoint(current: ActiveSession, durationSec: Long, force: Boolean = false) {
-        val result = countingPolicy.result(current.contentKind, durationSec)
+        val result = sessionResult(current, durationSec, commit = true)
         if (result.trackedDurationSec <= current.checkpointDurationSec) return
         if (!force && current.checkpointDurationSec > 0L &&
             result.trackedDurationSec - current.checkpointDurationSec < 5L) return
@@ -265,10 +300,17 @@ class ShortformSessionTracker(
     }
 
     private fun reportCountDelta(current: ActiveSession, durationSec: Long) {
-        val totalCount = countingPolicy.result(current.contentKind, durationSec).count
+        val result = sessionResult(current, durationSec, commit = true)
+        val totalCount = result.count
         val delta = totalCount - current.reportedCount
+        val newlyQualified = !current.qualificationReported && current.contentKind == ShortformContentKind.NORMAL &&
+            result.trackedDurationSec > 0L
+        if (newlyQualified) current.qualificationReported = true
+        if (delta > 0L) current.reportedCount = totalCount
+        // Repeated videos still need OCR/category resolution and time-based intervention.
+        if (newlyQualified) onQualifiedSession(ShortformCountDelta(
+            current.viewSessionId, current.platform, current.contentKey, current.contentKind, totalCount))
         if (delta <= 0L) return
-        current.reportedCount = totalCount
         onCountDelta(
             ShortformCountDelta(
                 viewSessionId = current.viewSessionId,

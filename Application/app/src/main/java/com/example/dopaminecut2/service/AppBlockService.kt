@@ -269,7 +269,7 @@ class AppBlockService : AccessibilityService() {
 
         viewTracker = ShortformSessionTracker(
             clockMs = monotonicClock::nowMillis,
-            onCountDelta = ::onViewCountDelta,
+            onQualifiedSession = ::onViewQualified,
             onCheckpoint = ::onTrackedSessionCheckpoint,
             onSessionCompleted = ::onTrackedSessionCompleted,
             onProvisionalCheckpoint = ::onProvisionalCheckpoint,
@@ -278,6 +278,11 @@ class AppBlockService : AccessibilityService() {
                 platform == currentAppManager?.platform && measurementEnabled &&
                     foregroundSnapshotReady && snapshots.cached() != null &&
                     !enforceManagedGoals(countAdmission = true)
+            },
+            admitRepeatedNormalSession = { platform ->
+                platform == currentAppManager?.platform && measurementEnabled &&
+                    foregroundSnapshotReady && snapshots.cached() != null &&
+                    !enforceManagedGoals(countAdmission = false)
             }
         )
         val reader = AccessibilitySnapshotReader(this, powerManager, keyguardManager, appManagers.keys)
@@ -491,7 +496,8 @@ class AppBlockService : AccessibilityService() {
         }
         currentSnapshot = observation.snapshot ?: return
         if (manager.platform == SupportedPlatform.INSTAGRAM) logInstagramSnapshot(currentSnapshot)
-        if (manager.platform == SupportedPlatform.YOUTUBE) {
+        if (manager.platform == SupportedPlatform.YOUTUBE &&
+            detectTrackingScreen(manager).state != ShortformScreenState.OVERLAY) {
             val nextLayout = contentRegionResolver.layoutKey(currentSnapshot)
             if (contentRegionResolver.requiresRevalidation(youtubeLayoutKey, nextLayout, currentContentKey)) {
                 // 배치 변경은 영상 전환이 아니다. 식별자/집계 세션을 유지하고 화면 결과만 무효화한다.
@@ -605,6 +611,11 @@ class AppBlockService : AccessibilityService() {
         }
     }
 
+    private fun detectTrackingScreen(manager: AppManagerInterface) = if (manager is YoutubeManager) {
+        manager.detectShortformScreen(currentSnapshot,
+            currentIsShortform || currentContentKey != null || currentScreenState == ShortformScreenState.OVERLAY)
+    } else manager.detectShortformScreen(currentSnapshot)
+
     private fun updateShortformTracking(manager: AppManagerInterface) {
         if (manager is InstagramManager) {
             updateInstagramTracking()
@@ -615,11 +626,11 @@ class AppBlockService : AccessibilityService() {
             return
         }
 
-        val detection = manager.detectShortformScreen(currentSnapshot)
+        val detection = detectTrackingScreen(manager)
         val previousScreenState = currentScreenState
         currentScreenState = detection.state
         currentIsShortform = detection.isConfirmedShortform
-        if (manager.platform == SupportedPlatform.YOUTUBE) {
+        if (manager.platform == SupportedPlatform.YOUTUBE && currentScreenState != ShortformScreenState.OVERLAY) {
             youtubeIdentityReady = if (youtubeLiveSession.key != null) youtubeLiveSession.confirmed
             else manager.getVideoIdentity(currentSnapshot, monotonicClock.nowMillis())?.quality == IdentityQuality.HIGH
             recognitionHealth.observe(detection.state, youtubeIdentityReady, monotonicClock.nowMillis())
@@ -644,10 +655,18 @@ class AppBlockService : AccessibilityService() {
                 contentKindJob?.cancel()
                 contentOcrJob?.cancel()
                 contentKindConfirmation.reset()
-                clearLatestOcr()
+                // Keep cached text and the active TemporalOcrCollector's buffer for this video.
+                if (BuildConfig.DEBUG) Log.d("YoutubeOverlayDiagnostic",
+                    "event=PAUSED evidence=${detection.evidence} session=${viewTracker.activeViewSessionId()} " +
+                        "key=${currentContentKey?.take(12)} cachedOcrChars=${latestOcrText.length} " +
+                        "analysisPaused=true viewingTimeContinues=${viewTracker.canContinueDuringInteraction()}")
             }
-            viewTracker.setPaused(true)
+            viewTracker.onInteractionOverlay()
             return
+        }
+        if (previousScreenState == ShortformScreenState.OVERLAY && BuildConfig.DEBUG) {
+            Log.d("YoutubeOverlayDiagnostic", "event=RETURNED session=${viewTracker.activeViewSessionId()} " +
+                "key=${currentContentKey?.take(12)} cachedOcrChars=${latestOcrText.length}")
         }
         if (manager.platform == SupportedPlatform.YOUTUBE &&
             com.example.dopaminecut2.logic.shortform.YoutubeAdEvidenceDetector.detect(currentSnapshot).explicitAd) {
@@ -1082,6 +1101,8 @@ class AppBlockService : AccessibilityService() {
         // 이전 세션을 활성 상태로 둔 채 마지막 사용량과 숏폼을 정산한다.
         accountAndPersistCurrentRunTime()
         if (::viewTracker.isInitialized) stopShortformTracking()
+        if (::viewTracker.isInitialized && (transition.previous?.userId != transition.current?.userId ||
+                transition.previous?.date != transition.current?.date)) viewTracker.clearRecentCountHistory()
         entryEvidenceGrace.reset()
         recognitionHealth = com.example.dopaminecut2.logic.shortform.RecognitionHealth()
         if (transition.previous?.userId != transition.current?.userId) {
@@ -1183,7 +1204,7 @@ class AppBlockService : AccessibilityService() {
         lastRunTimeFlushElapsedMs = 0L
     }
 
-    private fun onViewCountDelta(delta: ShortformCountDelta) {
+    private fun onViewQualified(delta: ShortformCountDelta) {
         val owner = normalSessions[delta.viewSessionId]
         if (delta.contentKind == ShortformContentKind.NORMAL && owner != null && !owner.classificationStarted) {
             owner.classificationStarted = true
@@ -1280,6 +1301,10 @@ class AppBlockService : AccessibilityService() {
                             viewTracker.activeViewSessionId() == delta.viewSessionId
                     },
                     canCapture = { isCurrentClassificationFrame(delta, owner, screenGeneration) },
+                    onPauseChanged = { paused, chars ->
+                        if (BuildConfig.DEBUG) Log.d("OcrCollection",
+                            "event=${if (paused) "PAUSED" else "RESUMED"} session=${delta.viewSessionId} bufferChars=$chars")
+                    },
                     capture = {
                         val allowCached = firstSample
                         firstSample = false
@@ -1371,6 +1396,10 @@ class AppBlockService : AccessibilityService() {
     }
 
     private fun resolveCategory(owner: NormalSessionOwner, result: ClassifiedContent) {
+        if (BuildConfig.DEBUG) Log.d("CategoryClassificationDiagnostic",
+            "event=RESOLVE session=${result.viewSessionId} category=${result.category} " +
+                "status=${result.status} source=${result.source} reason=${result.reason} " +
+                "alreadyResolved=${owner.resolved}")
         if (owner.resolved) return
         owner.resolved = true
         enqueueUsageWrite(UsageWriteCommand.Category(owner.userId, owner.date, owner.viewSessionId,
@@ -1512,11 +1541,13 @@ class AppBlockService : AccessibilityService() {
         val effective = com.example.dopaminecut2.logic.ManagedGoalProgress.effectiveUsage(
             managedUsage, manager.platform, activeAppSec, active, active?.let { managedCheckpoints[it.viewSessionId] }
         )
-        val eligible = currentScreenState == ShortformScreenState.INSIDE &&
+        val interactionViewing = isYoutubeInteractionViewing()
+        val effectiveKind = if (interactionViewing) active?.contentKind else currentContentKind
+        val eligible = interactionViewing || (currentScreenState == ShortformScreenState.INSIDE &&
                 currentContentKind in listOf(ShortformContentKind.NORMAL, ShortformContentKind.LIVE, ShortformContentKind.PHOTO_POST) &&
-                (manager.platform != SupportedPlatform.YOUTUBE || youtubeIdentityReady)
+                (manager.platform != SupportedPlatform.YOUTUBE || youtubeIdentityReady))
         val requests = com.example.dopaminecut2.logic.ManagedGoalPolicy.evaluate(managedGoals, effective, manager.platform,
-            eligible, currentContentKind == ShortformContentKind.NORMAL, countAdmission)
+            eligible, effectiveKind == ShortformContentKind.NORMAL, countAdmission)
         if (countAdmission && (!eligible || currentContentKind != ShortformContentKind.NORMAL)) return true
         var admissionBlocked = false
         managedEnforcementBusy = true
@@ -1617,6 +1648,10 @@ class AppBlockService : AccessibilityService() {
         }
     }
 
+    private fun isYoutubeInteractionViewing(): Boolean = measurementEnabled && sessionReady && foregroundSnapshotReady &&
+        !goalPresenter.isShowing && currentAppManager?.platform == SupportedPlatform.YOUTUBE &&
+        currentScreenState == ShortformScreenState.OVERLAY && viewTracker.canContinueDuringInteraction()
+
     private fun enforceContinuousBreak() {
         val now = monotonicClock.nowMillis()
         val elapsedMs = if (continuousLastElapsed > 0) (now - continuousLastElapsed).coerceIn(0L, 2_000L) else 0
@@ -1624,7 +1659,8 @@ class AppBlockService : AccessibilityService() {
         if (!measurementEnabled || currentScreenState == ShortformScreenState.OUTSIDE || currentAppManager == null) {
             continuousWatchSec = 0; continuousRemainderMs = 0; continuousNoticeSent = false; return
         }
-        if (currentScreenState != ShortformScreenState.INSIDE || currentContentKind in setOf(ShortformContentKind.UNKNOWN, ShortformContentKind.AD)) return
+        if (!isYoutubeInteractionViewing() && (currentScreenState != ShortformScreenState.INSIDE ||
+                currentContentKind in setOf(ShortformContentKind.UNKNOWN, ShortformContentKind.AD))) return
         val goal = managedGoals.firstOrNull { it.metric == com.example.dopaminecut2.domain.GoalMetric.DAILY_TIME &&
                 it.status == com.example.dopaminecut2.domain.GoalStatus.ACTIVE && currentAppManager?.platform in it.platforms } ?: return
         continuousRemainderMs += elapsedMs

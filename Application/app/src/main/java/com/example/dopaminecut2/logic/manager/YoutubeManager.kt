@@ -28,6 +28,9 @@ class YoutubeManager : BaseAppManager() {
     override fun detectShortformScreen(snapshot: ScreenSnapshot): ShortformScreenDetection =
         entryDetector.detect(snapshot)
 
+    fun detectShortformScreen(snapshot: ScreenSnapshot, hasShortformContext: Boolean): ShortformScreenDetection =
+        entryDetector.detect(snapshot, hasShortformContext)
+
     override fun isAdContent(snapshot: ScreenSnapshot): Boolean {
         return com.example.dopaminecut2.logic.shortform.YoutubeAdEvidenceDetector.detect(snapshot).explicitAd
     }

@@ -3,13 +3,17 @@ package com.example.dopaminecut2.logic.shortform
 import com.example.dopaminecut2.logic.manager.ScreenSnapshot
 
 class YoutubeEntryDetector {
-    fun detect(snapshot: ScreenSnapshot): ShortformScreenDetection {
+    fun detect(snapshot: ScreenSnapshot, hasShortformContext: Boolean = false): ShortformScreenDetection {
         val evidence = linkedSetOf<String>()
         val hasRoot = snapshot.hasResourceId(PACKAGE_NAME, "reel_watch_fragment_root")
         val hasPageContainer = snapshot.hasResourceId(PACKAGE_NAME, "reel_player_page_container")
         val hasReelRecycler = snapshot.hasResourceId(PACKAGE_NAME, "reel_recycler")
         val hasStructuralPlayer = hasPageContainer && hasReelRecycler
         val hasPlayer = hasRoot || hasStructuralPlayer
+        // The app's share dialog replaces the accessibility root: no background player IDs remain.
+        val hasShareSheet = snapshot.hasResourceId(PACKAGE_NAME, "design_bottom_sheet") &&
+            snapshot.hasResourceId(PACKAGE_NAME, "bottom_sheet_list") &&
+            snapshot.hasResourceId(PACKAGE_NAME, "touch_outside")
         // ID가 바뀌어도 설명 단서는 독립적인 후보를 만든다. 후보는 집계 확정이 아니다.
         val semanticGroups = listOf(
             listOf("채널로 이동", "go to channel"),
@@ -33,11 +37,18 @@ class YoutubeEntryDetector {
         if (hasPageContainer) evidence += "player_page_container"
         if (hasReelRecycler) evidence += "reel_recycler"
         if (hasShortsOverlay) evidence += "shorts_engagement_panel"
+        if (hasShareSheet) evidence += "share_sheet"
         if (hasMarker) evidence += "section_marker"
         if (hasOverlay) evidence += "overlay"
         if (semanticGroups >= 3) evidence += "semantic_player_candidate"
 
         return when {
+            hasShareSheet && (hasShortformContext || hasPlayer) -> ShortformScreenDetection(
+                ShortformScreenState.OVERLAY,
+                0.99f,
+                evidence
+            )
+
             hasShortsOverlay -> ShortformScreenDetection(
                 ShortformScreenState.OVERLAY,
                 0.99f,

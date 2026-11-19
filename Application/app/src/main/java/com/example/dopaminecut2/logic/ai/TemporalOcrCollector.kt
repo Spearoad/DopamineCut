@@ -63,13 +63,20 @@ class TemporalOcrCollector(
     suspend fun collect(
         isCurrent: () -> Boolean,
         canCapture: () -> Boolean = { true },
+        onPauseChanged: (Boolean, Int) -> Unit = { _, _ -> },
         capture: suspend () -> String?
     ): String {
         val buffer = OcrTextAccumulator()
+        var paused = false
         while (isCurrent()) {
+            val allowed = canCapture()
+            if (paused == allowed) {
+                paused = !allowed
+                onPauseChanged(paused, buffer.text.length)
+            }
             // A full buffer waits for the same session to end, without any more OCR.
             // Temporary comments/share overlays also pause sampling without discarding text.
-            if (buffer.isFull || !canCapture()) {
+            if (buffer.isFull || !allowed) {
                 wait(250L)
                 continue
             }
