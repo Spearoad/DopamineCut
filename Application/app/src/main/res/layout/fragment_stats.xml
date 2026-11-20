@@ -4,157 +4,135 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ui_background"
-    android:padding="16dp">
+    android:background="#F6F5FA">
 
-    <!-- 화면 타이틀 유지 -->
+    <!-- 상단 헤더 -->
+    <LinearLayout
+        android:id="@+id/stats_header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#EEEBF5"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="14dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <!-- 1. 최상위 뷰 (메인 탭): section_group을 TabLayout으로 변경 -->
+        <TextView
+            android:id="@+id/tv_stats_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="통계"
+            android:textColor="#1F1D2B"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_range"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:textColor="#6E6A80"
+            android:textSize="12sp" />
+
+        <!-- 기간 선택 드롭다운 버튼 -->
+        <LinearLayout
+            android:id="@+id/layout_period_dropdown"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:background="@drawable/bg_dropdown_box"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp">
+
+            <TextView
+                android:id="@+id/btn_period_dropdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/period_7_days"
+                android:textColor="#1F1D2B"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="4dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_expand_more_24"
+                app:tint="#5E5A6E" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 1. 최상위 섹션 탭 (사용량 / 콘텐츠 / 목표) -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_main_section"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:tabIndicatorColor="@color/ui_primary"
+        android:layout_width="0dp"
+        android:layout_height="44dp"
+        android:background="#F6F5FA"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stats_header"
+        app:tabGravity="fill"
+        app:tabIndicatorColor="#5B3FD9"
+        app:tabIndicatorHeight="2dp"
         app:tabMode="fixed"
-        app:tabSelectedTextColor="@color/ui_primary">
+        app:tabSelectedTextColor="#5B3FD9"
+        app:tabTextColor="#6E6A80">
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="사용량" />
+
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="콘텐츠" />
+
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="목표 변화" />
+            android:text="목표" />
     </com.google.android.material.tabs.TabLayout>
 
-    <!-- 2. 기간 필터 (드롭다운 버튼): period_group을 TextView로 변경 -->
-    <!-- Kotlin 코드에서 이 뷰에 setOnClickListener를 달아 BottomSheetDialog를 띄우도록 수정해야 합니다. -->
-    <TextView
-        android:id="@+id/btn_period_dropdown"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="8dp"
-        android:text="@string/period_7_days"
-        android:textColor="@color/ui_primary"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/scroll_platform_chips"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/scroll_platform_chips" />
-
-    <!-- 3. 대상 앱 선택 (가로 스크롤 필터 칩): platform_group을 ChipGroup으로 변경 -->
-    <HorizontalScrollView
-        android:id="@+id/scroll_platform_chips"
+    <View
+        android:id="@+id/divider_tabs"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="8dp"
-        android:scrollbars="none"
-        app:layout_constraintEnd_toStartOf="@id/btn_period_dropdown"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tab_main_section">
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chip_group_platform"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:singleSelection="true"
-            app:selectionRequired="true">
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_platform_all"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="전체" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_platform_youtube"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="유튜브" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_platform_instagram"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="인스타" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_platform_kakao"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="카카오톡" />
-        </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
-
-    <!-- 기간 안내 텍스트 -->
-    <TextView
-        android:id="@+id/tv_range"
-        style="@style/Widget.DopamineCut.StatsBody"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textSize="11sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/scroll_platform_chips" />
-
-    <!-- 4. 하위 뷰어 (시간/영상 수 토글): metric_group 유지 및 우측 정렬 -->
-    <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/metric_group"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:checkedButton="@id/btn_metric_time"
+        android:layout_height="1dp"
+        android:background="#E5E1ED"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_range"
-        app:selectionRequired="true"
-        app:singleSelection="true">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tab_main_section" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_metric_time"
-            style="@style/Widget.DopamineCut.StatsFilter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/metric_time" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_metric_count"
-            style="@style/Widget.DopamineCut.StatsFilter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="영상 수" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
-
-    <!-- 에러 및 재시도 상태 레이아웃 (PERMISSION_DENIED 처리용) -->
+    <!-- 에러 및 권한 재시도 영역 -->
     <LinearLayout
         android:id="@+id/state_group"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
+        android:padding="24dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/metric_group">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/divider_tabs">
 
         <TextView
             android:id="@+id/tv_state_message"
-            style="@style/Widget.DopamineCut.StatsBody"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:accessibilityLiveRegion="polite"
             android:text="데이터를 불러오려면 접근 권한이 필요해요."
-            android:textAlignment="center" />
+            android:textAlignment="center"
+            android:textColor="#5E5A6E"
+            android:textSize="13sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_retry"
@@ -168,63 +146,924 @@
 
     <ProgressBar
         android:id="@+id/progress_loading"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/metric_group" />
+        app:layout_constraintTop_toBottomOf="@id/divider_tabs" />
 
-    <!-- 차트 및 상세 내용이 들어가는 스크롤 영역 (기존 코드 그대로 유지) -->
+    <!-- 메인 스크롤 컨테이너 -->
     <ScrollView
         android:id="@+id/details_scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="28dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/metric_group">
+        app:layout_constraintTop_toBottomOf="@id/divider_tabs">
 
         <LinearLayout
             android:id="@+id/content_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="12dp">
+            android:orientation="vertical">
 
-            <!-- 기존 panel_usage, panel_content, panel_goals 레이아웃 그대로 복사 -->
-            <LinearLayout android:id="@+id/panel_usage" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                <TextView android:id="@+id/tv_summary_basis" style="@style/Widget.DopamineCut.StatsBody" />
-                <LinearLayout android:id="@+id/summary_cards" style="@style/Widget.DopamineCut.StatsCard" android:orientation="horizontal" />
-                <TextView android:id="@+id/tv_totals" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                <TextView android:id="@+id/tv_comparison" style="@style/Widget.DopamineCut.StatsBody" android:textColor="@color/ui_primary" />
-                <TextView android:id="@+id/tv_daily_title" style="@style/Widget.DopamineCut.StatsTitle" android:text="날짜별 변화" />
-                <com.github.mikephil.charting.charts.BarChart android:id="@+id/chart_daily" android:layout_width="match_parent" android:layout_height="150dp" />
-                <TextView style="@style/Widget.DopamineCut.StatsBody" android:text="막대를 누르면 해당 날짜의 기록을 볼 수 있어요." android:textSize="11sp" />
-                <LinearLayout android:id="@+id/day_detail" style="@style/Widget.DopamineCut.StatsCard" android:orientation="vertical" android:visibility="gone" />
-                <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="플랫폼별 사용" />
-                <LinearLayout android:id="@+id/platform_list" style="@style/Widget.DopamineCut.StatsCard" android:orientation="vertical" />
-                <TextView android:id="@+id/tv_usage_ratio" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="많이 본 시간대" />
-                <TextView android:id="@+id/tv_hourly_note" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                <com.github.mikephil.charting.charts.BarChart android:id="@+id/chart_hourly" android:layout_width="match_parent" android:layout_height="120dp" />
-                <TextView style="@style/Widget.DopamineCut.StatsBody" android:text="누락 날짜는 0으로 계산하지 않아요. 기록일 평균은 측정 중단 영향을 받을 수 있어요." android:textSize="11sp" />
+            <!-- 앱 필터 칩 (사용량 / 콘텐츠 탭 공용) -->
+            <HorizontalScrollView
+                android:id="@+id/scroll_platform_chips"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group_platform"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_platform_all"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="전체" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_platform_youtube"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="YouTube" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_platform_instagram"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Instagram" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_platform_kakao"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="KakaoTalk" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <!-- ========================================================= -->
+            <!-- [TAB 1] 사용량 패널 (시간대별 사용 분석 프로토타입 반영)     -->
+            <!-- ========================================================= -->
+            <LinearLayout
+                android:id="@+id/panel_usage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 2컬럼 요약 KPI (숏폼 시청 시간 / 숏폼 영상 수) -->
+                <LinearLayout
+                    android:id="@+id/layout_usage_kpis"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="4dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="숏폼 시청 시간"
+                            android:textColor="#6E6A80"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tv_summary_shortform_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="0분"
+                            android:textColor="#1F1D2B"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="숏폼 영상 수"
+                            android:textColor="#6E6A80"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tv_summary_shortform_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="0개"
+                            android:textColor="#1F1D2B"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 기존 바인딩 호환용 요약 컨테이너 -->
+                <LinearLayout
+                    android:id="@+id/summary_cards"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tv_summary_basis"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tv_totals"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tv_comparison"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:textColor="#5B3FD9"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <!-- 카드 1: 시간대별 사용 분석 카드 -->
+                <LinearLayout
+                    android:id="@+id/card_hourly_analysis"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp"
+                    android:background="@drawable/bg_modern_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <!-- 카드 헤더 + 우측 시간/영상 수 세그먼트 토글 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="시간대별 사용"
+                            android:textColor="#1F1D2B"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/metric_group"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_segmented_track"
+                            android:padding="2dp"
+                            app:checkedButton="@id/btn_metric_time"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_metric_time"
+                                style="@style/Widget.DopamineCut.StatsFilter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:minWidth="52dp"
+                                android:text="@string/metric_time"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_metric_count"
+                                style="@style/Widget.DopamineCut.StatsFilter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:minWidth="62dp"
+                                android:text="영상 수"
+                                android:textSize="12sp" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+                    </LinearLayout>
+
+                    <!-- 기준 안내 문구 -->
+                    <TextView
+                        android:id="@+id/tv_hourly_note"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="전체 · 숏폼 시청 시간 · 선택 기간 합계"
+                        android:textColor="#6E6A80"
+                        android:textSize="11sp" />
+
+                    <!-- 가장 많이 본 시간대 하이라이트 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="18dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="가장 많이 본 시간대"
+                            android:textColor="#6E6A80"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tv_hourly_peak_range"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="21~22시"
+                            android:textColor="#5B3FD9"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_hourly_peak_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textColor="#6E6A80"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- 24시간 인터랙티브 막대 차트 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <!-- Y축 라벨 -->
+                        <LinearLayout
+                            android:layout_width="28dp"
+                            android:layout_height="140dp"
+                            android:layout_marginEnd="8dp"
+                            android:gravity="end"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tv_hourly_y_max"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="30"
+                                android:textColor="#8B869E"
+                                android:textSize="10sp" />
+
+                            <View
+                                android:layout_width="1dp"
+                                android:layout_height="0dp"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/tv_hourly_y_half"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="15"
+                                android:textColor="#8B869E"
+                                android:textSize="10sp" />
+
+                            <View
+                                android:layout_width="1dp"
+                                android:layout_height="0dp"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#8B869E"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <!-- 차트 플롯 영역 -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <FrameLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="140dp">
+
+                                <!-- 가로 눈금선 3줄 -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:orientation="vertical">
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="#ECE9F5" />
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="0dp"
+                                        android:layout_weight="1" />
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="#ECE9F5" />
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="0dp"
+                                        android:layout_weight="1" />
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="#ECE9F5" />
+                                </LinearLayout>
+
+                                <!-- 24개 막대가 동적 배치되는 컨테이너 -->
+                                <LinearLayout
+                                    android:id="@+id/hourly_bars_container"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:gravity="bottom"
+                                    android:orientation="horizontal" />
+
+                                <!-- 기존 MPAndroidChart 바인딩 호환용 -->
+                                <com.github.mikephil.charting.charts.BarChart
+                                    android:id="@+id/chart_hourly"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:visibility="gone" />
+                            </FrameLayout>
+
+                            <!-- X축 시간대 라벨 -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="0시"
+                                    android:textColor="#8B869E"
+                                    android:textSize="10sp" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_horizontal"
+                                    android:text="6시"
+                                    android:textColor="#8B869E"
+                                    android:textSize="10sp" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_horizontal"
+                                    android:text="12시"
+                                    android:textColor="#8B869E"
+                                    android:textSize="10sp" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_horizontal"
+                                    android:text="18시"
+                                    android:textColor="#8B869E"
+                                    android:textSize="10sp" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="end"
+                                    android:text="23시"
+                                    android:textColor="#8B869E"
+                                    android:textSize="10sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="14dp"
+                        android:background="#ECE9F5" />
+
+                    <!-- 시간대 상세 선택 행 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="시간대 상세"
+                            android:textColor="#1F1D2B"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <RelativeLayout
+                            android:layout_width="136dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_dropdown_box"
+                            android:paddingHorizontal="10dp">
+
+                            <Spinner
+                                android:id="@+id/spinner_hourly_detail"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@android:color/transparent"
+                                android:paddingEnd="18dp" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_expand_more_24"
+                                app:tint="#5E5A6E" />
+                        </RelativeLayout>
+                    </LinearLayout>
+
+                    <!-- 선택 시간대 상세 내역 -->
+                    <LinearLayout
+                        android:id="@+id/layout_hourly_detail_breakdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tv_detail_hour_title"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="21~22시 · 전체"
+                                android:textColor="#1F1D2B"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:id="@+id/tv_detail_hour_total"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0분"
+                                android:textColor="#5B3FD9"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/hourly_detail_rows"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 카드 2: 날짜별 변화 (기존 차트 카드 스타일 통일) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp"
+                    android:background="@drawable/bg_modern_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:id="@+id/tv_daily_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="날짜별 변화"
+                        android:textColor="#1F1D2B"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/chart_daily"
+                        android:layout_width="match_parent"
+                        android:layout_height="150dp"
+                        android:layout_marginTop="10dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="막대를 누르면 해당 날짜의 기록을 볼 수 있어요."
+                        android:textColor="#6E6A80"
+                        android:textSize="11sp" />
+
+                    <LinearLayout
+                        android:id="@+id/day_detail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="vertical"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- 카드 3: 플랫폼별 사용 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:background="@drawable/bg_modern_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="플랫폼별 사용"
+                        android:textColor="#1F1D2B"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/platform_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/tv_usage_ratio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="#6E6A80"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="4dp"
+                    android:text="선택 기간의 합계 · 일반 숏폼은 시간·영상 수, 라이브·사진 게시물은 시간만 반영"
+                    android:textColor="#6E6A80"
+                    android:textSize="11sp" />
             </LinearLayout>
 
-            <LinearLayout android:id="@+id/panel_content" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
-                <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="콘텐츠 구성" />
-                <TextView android:id="@+id/tv_category_scope" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                <LinearLayout android:id="@+id/category_list" style="@style/Widget.DopamineCut.StatsCard" android:orientation="vertical" />
-                <TextView android:id="@+id/tv_quality_notice" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                <com.google.android.material.button.MaterialButton android:id="@+id/btn_content_info" style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="집계 기준" android:textSize="12sp" android:minHeight="48dp" />
+            <!-- ========================================================= -->
+            <!-- [TAB 2] 콘텐츠 패널                                         -->
+            <!-- ========================================================= -->
+            <LinearLayout
+                android:id="@+id/panel_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_modern_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="콘텐츠 구성"
+                        android:textColor="#1F1D2B"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_category_scope"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="#6E6A80"
+                        android:textSize="11sp" />
+
+                    <LinearLayout
+                        android:id="@+id/category_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/tv_quality_notice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:textColor="#6E6A80"
+                        android:textSize="11sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_content_info"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="44dp"
+                        android:text="집계 기준"
+                        android:textColor="#5B3FD9"
+                        android:textSize="12sp" />
+                </LinearLayout>
             </LinearLayout>
 
-            <LinearLayout android:id="@+id/panel_goals" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
-                <TextView style="@style/Widget.DopamineCut.StatsTitle" android:text="목표별 변화" />
-                <TextView android:id="@+id/tv_goals_note" style="@style/Widget.DopamineCut.StatsBody" android:textSize="11sp" />
-                <LinearLayout android:id="@+id/goal_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+            <!-- ========================================================= -->
+            <!-- [TAB 3] 목표 패널 (목표 달성 달력 프로토타입 반영)           -->
+            <!-- ========================================================= -->
+            <LinearLayout
+                android:id="@+id/panel_goals"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- 카드 1: 목표 달성 달력 -->
+                <LinearLayout
+                    android:id="@+id/card_goal_calendar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp"
+                    android:background="@drawable/bg_modern_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 달력 헤더 + 오늘 버튼 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="목표 달성 달력"
+                            android:textColor="#1F1D2B"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btn_calendar_today"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:paddingHorizontal="10dp"
+                            android:text="오늘"
+                            android:textColor="#5B3FD9"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- 월 이동 네비게이션 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/btn_calendar_prev"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="‹"
+                            android:textColor="#1F1D2B"
+                            android:textSize="22sp" />
+
+                        <TextView
+                            android:id="@+id/tv_calendar_month"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:text="2026년 11월"
+                            android:textColor="#1F1D2B"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btn_calendar_next"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="›"
+                            android:textColor="#1F1D2B"
+                            android:textSize="22sp" />
+                    </LinearLayout>
+
+                    <!-- 요일 헤더 (일~토) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
+                        android:orientation="horizontal">
+
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="일" android:textColor="#6E6A80" android:textSize="11sp" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="월" android:textColor="#6E6A80" android:textSize="11sp" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="화" android:textColor="#6E6A80" android:textSize="11sp" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="수" android:textColor="#6E6A80" android:textSize="11sp" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="목" android:textColor="#6E6A80" android:textSize="11sp" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="금" android:textColor="#6E6A80" android:textSize="11sp" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="토" android:textColor="#6E6A80" android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <!-- 7열 날짜 셀 컨테이너 -->
+                    <GridLayout
+                        android:id="@+id/grid_calendar_days"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:columnCount="7" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="10dp"
+                        android:background="#ECE9F5" />
+
+                    <!-- 상태 범례 -->
+                    <TextView
+                        android:id="@+id/tv_calendar_legend"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:lineSpacingExtra="4dp"
+                        android:text="✓ 달성   ◐ 일부 달성   × 초과   ? 기록 부족   − 목표 제외   ● 오늘"
+                        android:textColor="#6E6A80"
+                        android:textSize="11sp" />
+
+                    <!-- 월 요약 텍스트 -->
+                    <TextView
+                        android:id="@+id/tv_calendar_summary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="모든 목표 달성 0일 · 일부 달성 0일 / 평가 0일"
+                        android:textColor="#5B3FD9"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 카드 2: 선택한 날짜 상세 카드 -->
+                <LinearLayout
+                    android:id="@+id/card_calendar_detail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp"
+                    android:background="@drawable/bg_modern_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tv_calendar_selected_date"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="11월 19일"
+                            android:textColor="#1F1D2B"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_calendar_selected_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_badge_soft"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:text="달성"
+                            android:textColor="#5B3FD9"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_calendar_selected_desc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="세 앱 합산 · 해당 날짜에 저장된 목표 기준"
+                        android:textColor="#6E6A80"
+                        android:textSize="11sp" />
+
+                    <LinearLayout
+                        android:id="@+id/calendar_selected_goals_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="vertical" />
+                </LinearLayout>
+
+                <!-- 카드 3: 목표별 변화 카드 -->
+                <LinearLayout
+                    android:id="@+id/card_goal_comparisons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:background="@drawable/bg_modern_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="목표별 변화"
+                        android:textColor="#1F1D2B"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_goals_note"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="선택한 달 · 평가 가능한 완료일 기준"
+                        android:textColor="#6E6A80"
+                        android:textSize="11sp" />
+
+                    <LinearLayout
+                        android:id="@+id/calendar_goal_comparisons_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical" />
+
+                    <!-- 기존 goal_list 바인딩 호환용 -->
+                    <LinearLayout
+                        android:id="@+id/goal_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="4dp"
+                    android:text="당시 목표 기준 · 목표 제외·기록 부족·오늘은 달성률에서 제외"
+                    android:textColor="#6E6A80"
+                    android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
