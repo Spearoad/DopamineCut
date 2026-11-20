@@ -139,7 +139,13 @@ class FirebaseDataSource(
                     AppUsage(
                         runTimeSec = usage.longValue(FirestoreFields.APP_TIME_SEC),
                         shortformTimeSec = usage.longValue(FirestoreFields.SHORTFORM_TIME_SEC),
-                        shortformCount = usage.longValue(FirestoreFields.SHORTFORM_COUNT)
+                        shortformCount = usage.longValue(FirestoreFields.SHORTFORM_COUNT),
+                        hourlyShortformTimeSec = usage["hourly_shortform_time_sec"]
+                            .asStringMap()
+                            .mapValues { (_, sec) -> (sec as? Number)?.toLong() ?: 0L },
+                        hourlyShortformCount = usage[FirestoreFields.HOURLY_SHORTFORM_COUNT]
+                            .asStringMap()
+                            .mapValues { (_, count) -> (count as? Number)?.toLong() ?: 0L }
                     )
                 }
             },
