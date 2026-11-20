@@ -36,8 +36,13 @@ open class StatsFragment : Fragment() {
     private val viewModel: StatsViewModel by viewModels {
         val dependencies = (requireActivity().application as DopamineCutApplication).requireDependencies()
         ViewModelFactory {
-            StatsViewModel(dependencies.userRepository, dependencies.authRepository,
-                dependencies.dateIdProvider, dependencies.goalStore, dependencies.habitInsights)
+            StatsViewModel(
+                dependencies.userRepository,
+                dependencies.authRepository,
+                dependencies.dateIdProvider,
+                dependencies.goalStore,
+                dependencies.habitInsights
+            )
         }
     }
 
@@ -45,41 +50,57 @@ open class StatsFragment : Fragment() {
         FragmentStatsBinding.inflate(inflater, container, false).also { _binding = it }.root
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        dashboard = StatsDashboardRenderer(binding) { viewModel.onAction(StatsAction.SelectDate(it)) }
+        dashboard = StatsDashboardRenderer(
+            binding = binding,
+            selectDate = { viewModel.onAction(StatsAction.SelectDate(it)) },
+            selectHour = { viewModel.onAction(StatsAction.SelectHour(it)) },
+            shiftCalendarMonth = { viewModel.onAction(StatsAction.ShiftCalendarMonth(it)) },
+            selectCalendarDate = { viewModel.onAction(StatsAction.SelectCalendarDate(it)) },
+            jumpCalendarToday = { viewModel.onAction(StatsAction.JumpCalendarToday) }
+        )
 
-        // 1. 기간 필터 (드롭다운 & PopupMenu)
-        binding.btnPeriodDropdown.setOnClickListener {
-            if (rendering) return@setOnClickListener
-            showPeriodPopupMenu()
+        val openPeriodMenu = View.OnClickListener {
+            if (!rendering) showPeriodPopupMenu()
         }
+        binding.layoutPeriodDropdown.setOnClickListener(openPeriodMenu)
+        binding.btnPeriodDropdown.setOnClickListener(openPeriodMenu)
 
-        // 2. 플랫폼 칩 그룹 (ChipGroup)
         binding.chipGroupPlatform.setOnCheckedStateChangeListener { _, checkedIds ->
             if (rendering || checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
-            viewModel.onAction(StatsAction.SelectPlatform(when (checkedIds.first()) {
-                R.id.chip_platform_youtube -> SupportedPlatform.YOUTUBE
-                R.id.chip_platform_instagram -> SupportedPlatform.INSTAGRAM
-                R.id.chip_platform_kakao -> SupportedPlatform.KAKAOTALK
-                else -> null
-            }))
+            viewModel.onAction(
+                StatsAction.SelectPlatform(
+                    when (checkedIds.first()) {
+                        R.id.chip_platform_youtube -> SupportedPlatform.YOUTUBE
+                        R.id.chip_platform_instagram -> SupportedPlatform.INSTAGRAM
+                        R.id.chip_platform_kakao -> SupportedPlatform.KAKAOTALK
+                        else -> null
+                    }
+                )
+            )
         }
 
-        // 3. 지표 그룹 (Metric) - 기존 유지
         binding.metricGroup.addOnButtonCheckedListener { _, id, checked ->
             if (checked && !rendering) {
-                viewModel.onAction(StatsAction.SelectMetric(if (id == R.id.btn_metric_count) StatsMetric.COUNT else StatsMetric.TIME))
+                viewModel.onAction(
+                    StatsAction.SelectMetric(
+                        if (id == R.id.btn_metric_count) StatsMetric.COUNT else StatsMetric.TIME
+                    )
+                )
             }
         }
 
-        // 4. 섹션 탭 (TabLayout)
         binding.tabMainSection.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 if (rendering) return
-                viewModel.onAction(StatsAction.SelectSection(when (tab?.position) {
-                    1 -> StatsSection.CONTENT
-                    2 -> StatsSection.GOALS
-                    else -> StatsSection.USAGE
-                }))
+                viewModel.onAction(
+                    StatsAction.SelectSection(
+                        when (tab?.position) {
+                            1 -> StatsSection.CONTENT
+                            2 -> StatsSection.GOALS
+                            else -> StatsSection.USAGE
+                        }
+                    )
+                )
                 binding.detailsScroll.scrollTo(0, 0)
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
@@ -109,7 +130,6 @@ open class StatsFragment : Fragment() {
     private fun render(state: StatsUiState) {
         rendering = true
 
-        // 기간 텍스트 업데이트
         binding.btnPeriodDropdown.text = when (state.period) {
             StatsPeriod.TODAY -> "오늘"
             StatsPeriod.SEVEN_DAYS -> "최근 7일"
@@ -117,7 +137,6 @@ open class StatsFragment : Fragment() {
             StatsPeriod.CUSTOM -> "직접 지정"
         }
 
-        // 플랫폼 칩 업데이트
         val platformChipId = when (state.platform) {
             SupportedPlatform.YOUTUBE -> R.id.chip_platform_youtube
             SupportedPlatform.INSTAGRAM -> R.id.chip_platform_instagram
@@ -126,10 +145,8 @@ open class StatsFragment : Fragment() {
         }
         binding.chipGroupPlatform.check(platformChipId)
 
-        // 메트릭 버튼 업데이트
         binding.metricGroup.check(if (state.metric == StatsMetric.TIME) R.id.btn_metric_time else R.id.btn_metric_count)
 
-        // 섹션 탭 업데이트
         val tabIndex = when (state.section) {
             StatsSection.USAGE -> 0
             StatsSection.CONTENT -> 1
@@ -141,12 +158,19 @@ open class StatsFragment : Fragment() {
 
         rendering = false
 
-        binding.metricGroup.isVisible = state.section != StatsSection.GOALS
-        binding.tvRange.text = if (state.start != null && state.end != null)
-            "${state.start} ~ ${state.end}" + ((state.content as? ContentState.Data)?.value?.let { " · 기록 ${it.recordedDays}/${it.days.size}일" } ?: "") else ""
+        val isGoalsTab = state.section == StatsSection.GOALS
+        binding.layoutPeriodDropdown.isVisible = !isGoalsTab
+        binding.scrollPlatformChips.isVisible = !isGoalsTab
+        binding.metricGroup.isVisible = state.section == StatsSection.USAGE
+
+        binding.tvRange.text = if (!isGoalsTab && state.start != null && state.end != null) {
+            "${state.start} ~ ${state.end}" + ((state.content as? ContentState.Data)?.value?.let { " · 기록 ${it.recordedDays}/${it.days.size}일" } ?: "")
+        } else {
+            ""
+        }
         binding.progressLoading.isVisible = state.content is ContentState.Loading
 
-        val goalsWithoutUsage = state.section == StatsSection.GOALS && state.content is ContentState.Empty
+        val goalsWithoutUsage = isGoalsTab && state.content is ContentState.Empty
         binding.contentGroup.isVisible = state.content is ContentState.Data || goalsWithoutUsage
         binding.stateGroup.isVisible = state.content !is ContentState.Data && state.content !is ContentState.Loading && !goalsWithoutUsage
         binding.btnRetry.isVisible = state.content is ContentState.Error && state.content.canRetry
@@ -160,13 +184,21 @@ open class StatsFragment : Fragment() {
                     binding.panelContent.isVisible = false
                     binding.panelGoals.isVisible = true
                     dashboard?.renderGoals(state)
+                } else {
+                    dashboard?.clear()
                 }
             }
-            is ContentState.Error -> binding.tvStateMessage.text = content.message
-            is ContentState.Unavailable -> binding.tvStateMessage.text = content.reason
+            is ContentState.Error -> {
+                binding.tvStateMessage.text = content.message
+                dashboard?.clear()
+            }
+            is ContentState.Unavailable -> {
+                binding.tvStateMessage.text = content.reason
+                dashboard?.clear()
+            }
             ContentState.Loading -> dashboard?.clear()
         }
-        if (state.content !is ContentState.Data) dashboard?.clear()
+
         state.message?.let {
             Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show()
             viewModel.onAction(StatsAction.ClearMessage)
@@ -174,7 +206,7 @@ open class StatsFragment : Fragment() {
     }
 
     private fun showPeriodPopupMenu() {
-        val popup = PopupMenu(requireContext(), binding.btnPeriodDropdown)
+        val popup = PopupMenu(requireContext(), binding.layoutPeriodDropdown)
         popup.menu.add(0, 0, 0, "오늘")
         popup.menu.add(0, 1, 1, "최근 7일")
         popup.menu.add(0, 2, 2, "최근 30일")
@@ -201,10 +233,12 @@ open class StatsFragment : Fragment() {
             .setCalendarConstraints(CalendarConstraints.Builder().setEnd(today).setValidator(DateValidatorPointBackward.before(today)).build())
 
         if (state.start != null && state.end != null) {
-            picker.setSelection(androidx.core.util.Pair(
-                state.start.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-                state.end.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-            ))
+            picker.setSelection(
+                androidx.core.util.Pair(
+                    state.start.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+                    state.end.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                )
+            )
         }
         picker.build().apply {
             addOnPositiveButtonClickListener(::submitRange)
@@ -214,10 +248,12 @@ open class StatsFragment : Fragment() {
     private fun submitRange(selection: androidx.core.util.Pair<Long, Long>) {
         val start = selection.first ?: return
         val end = selection.second ?: return
-        viewModel.onAction(StatsAction.SelectRange(
-            Instant.ofEpochMilli(start).atZone(ZoneOffset.UTC).toLocalDate(),
-            Instant.ofEpochMilli(end).atZone(ZoneOffset.UTC).toLocalDate()
-        ))
+        viewModel.onAction(
+            StatsAction.SelectRange(
+                Instant.ofEpochMilli(start).atZone(ZoneOffset.UTC).toLocalDate(),
+                Instant.ofEpochMilli(end).atZone(ZoneOffset.UTC).toLocalDate()
+            )
+        )
     }
 
     override fun onDestroyView() {
