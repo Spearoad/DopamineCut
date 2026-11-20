@@ -20,7 +20,9 @@ data class DailyStatistics(
 data class AppUsage(
     val runTimeSec: Long = 0L,
     val shortformTimeSec: Long = 0L,
-    val shortformCount: Long = 0L
+    val shortformCount: Long = 0L,
+    val hourlyShortformTimeSec: Map<String, Long> = emptyMap(),
+    val hourlyShortformCount: Map<String, Long> = emptyMap()
 )
 
 data class CategoryUsage(
