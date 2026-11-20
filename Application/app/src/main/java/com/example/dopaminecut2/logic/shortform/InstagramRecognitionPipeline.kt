@@ -8,18 +8,30 @@ import com.example.dopaminecut2.session.ServiceSession
 import kotlinx.coroutines.*
 
 data class InstagramFrameToken(val owner: ServiceSession, val contentKey: String, val generation: Long)
-data class InstagramRecognitionState(val screen: ShortformScreenState = ShortformScreenState.OUTSIDE,
-    val contentKey: String? = null, val kind: ShortformContentKind = ShortformContentKind.UNKNOWN,
-    val paused: Boolean = true, val generation: Long = 0, val reason: String = "STOPPED")
+data class InstagramRecognitionState(
+    val screen: ShortformScreenState = ShortformScreenState.OUTSIDE,
+    val contentKey: String? = null,
+    val kind: ShortformContentKind = ShortformContentKind.UNKNOWN,
+    val paused: Boolean = true,
+    val generation: Long = 0,
+    val reason: String = "STOPPED",
+    val excluded: Boolean = false
+)
 
 /** Main-confined, platform-owned tracking/inference state. No storage, Firebase or image retention. */
-class InstagramRecognitionPipeline(private val scope: CoroutineScope, private val manager: InstagramManager,
-    private val now: () -> Long, private val owner: () -> ServiceSession?,
+class InstagramRecognitionPipeline(
+    private val scope: CoroutineScope,
+    private val manager: InstagramManager,
+    private val now: () -> Long,
+    private val owner: () -> ServiceSession?,
     private val infer: suspend (InstagramFrameToken) -> InstagramContentPrediction?,
     private val emit: (InstagramRecognitionState) -> Unit,
-    private val onFailure: (Throwable) -> Unit = {}, private val settleMs: Long = 150) {
+    private val onFailure: (Throwable) -> Unit = {},
+    private val settleMs: Long = 150
+) {
     var state = InstagramRecognitionState()
         private set
+    private val confirmation = ContentKindConfirmation()
     private var currentOwner: ServiceSession? = null
     private var job: Job? = null
     private var generation = 0L
@@ -38,16 +50,19 @@ class InstagramRecognitionPipeline(private val scope: CoroutineScope, private va
             publish(InstagramRecognitionState(generation = generation, reason = decision.reason))
             return
         }
-        // 댓글·공유창이 열렸을 때 / 광고가 나왔을 때 숏폼 영상 수가 증가하지 않도록(새 키를 채택하지 않도록) decision.paused 코드 이동
+        // 댓글·공유창이 열렸을 때 / 일시정지 시 새 키를 채택하지 않도록 유지
         if (decision.paused) {
             if (state.contentKey == null) return
             if (state.screen != ShortformScreenState.OVERLAY) invalidate()
 
-            publish(state.copy(
-                screen = ShortformScreenState.OVERLAY,
-                paused = true,
-                generation = generation,
-                reason = decision.reason ))
+            publish(
+                state.copy(
+                    screen = ShortformScreenState.OVERLAY,
+                    paused = true,
+                    generation = generation,
+                    reason = decision.reason
+                )
+            )
             return
         }
         val key = decision.contentKey ?: return
@@ -57,31 +72,53 @@ class InstagramRecognitionPipeline(private val scope: CoroutineScope, private va
             failures = 0
             lastAttempt = null
             knownNonReel = false
-            publish(InstagramRecognitionState(ShortformScreenState.INSIDE, key,
-                generation = generation, reason = "AWAITING_CV"))
-        } else publish(state.copy(screen = ShortformScreenState.INSIDE,
-            paused = !countsWatchTime(state.kind), reason = decision.reason))
+            publish(
+                InstagramRecognitionState(
+                    screen = ShortformScreenState.INSIDE,
+                    contentKey = key,
+                    kind = ShortformContentKind.UNKNOWN,
+                    paused = false, // 임시 세션(Provisional)이 대기 시간을 기록할 수 있도록 false
+                    generation = generation,
+                    reason = "AWAITING_CV",
+                    excluded = false
+                )
+            )
+        } else {
+            publish(
+                state.copy(
+                    screen = ShortformScreenState.INSIDE,
+                    paused = state.excluded || state.kind == ShortformContentKind.AD,
+                    reason = decision.reason
+                )
+            )
+        }
 
         val nonReelFresh = knownNonReel && lastAttempt?.let { now() - it < 15_000 } == true
-        when (val command = manager.contentTrackingCommand(snapshot, ContentTrackingContext(
-            key, state.contentKey, state.kind, job?.isActive == true, nonReelFresh))) {
-            ContentTrackingCommand.RetryClassification, is ContentTrackingCommand.BeginClassification -> requestInference(key)
-            // 같은 부류가 적용되었더라도, 취소 요청이 있으면 진행 중인 CV의 토큰을 무효화해야하므로 코드 내용 변경
+        when (val command = manager.contentTrackingCommand(
+            snapshot,
+            ContentTrackingContext(key, state.contentKey, state.kind, job?.isActive == true, nonReelFresh)
+        )) {
+            ContentTrackingCommand.RetryClassification,
+            is ContentTrackingCommand.BeginClassification -> requestInference(key)
+
             is ContentTrackingCommand.Track -> {
                 if (command.cancelInference && job?.isActive == true) invalidate()
-                if (command.kind != state.kind || state.generation != generation) {
-                    publish(state.copy(
-                        kind = command.kind,
-                        paused = !countsWatchTime(command.kind),
-                        generation = generation
-                    ))
+                val isAd = command.kind == ShortformContentKind.AD
+                if (command.kind != state.kind || state.generation != generation || state.excluded != isAd) {
+                    publish(
+                        state.copy(
+                            kind = command.kind,
+                            paused = !countsWatchTime(command.kind),
+                            generation = generation,
+                            excluded = isAd
+                        )
+                    )
                 }
             }
             ContentTrackingCommand.Wait -> Unit
         }
     }
 
-    // 숏폼 종류를 파악하기 위한 함수 추가
     private fun countsWatchTime(kind: ShortformContentKind): Boolean = when (kind) {
         ShortformContentKind.NORMAL,
         ShortformContentKind.LIVE,
@@ -102,16 +139,66 @@ class InstagramRecognitionPipeline(private val scope: CoroutineScope, private va
                 if (!accepts(token)) return@launch
                 val prediction = infer(token)
                 if (!accepts(token)) return@launch
-                knownNonReel = prediction?.uiClass?.isSafeNonReelScreen == true
-                val kind = prediction?.contentKind ?: ShortformContentKind.UNKNOWN
-                failures = if (kind == ShortformContentKind.UNKNOWN) failures + 1 else 0
-                publish(state.copy(kind = kind, paused = !countsWatchTime(kind),
-                    reason = prediction?.uiClass?.name ?: "INFERENCE_UNAVAILABLE"))
-            } catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) {
+
+                val isNonReel = prediction?.uiClass?.isSafeNonReelScreen == true
+                val rawKind = when {
+                    prediction == null -> ShortformContentKind.UNKNOWN
+                    isNonReel -> ShortformContentKind.AD
+                    else -> prediction.contentKind
+                }
+
+                // 2프레임 연속 검증
+                val confirmedKind = confirmation.observe(rawKind, now())
+                if (confirmedKind == ShortformContentKind.UNKNOWN) {
+                    // 추론 실패(UNKNOWN)일 때만 백오프 증가, 1차 관측 완료 후 2차 대기는 1초 뒤 바로 재시도
+                    failures = if (rawKind == ShortformContentKind.UNKNOWN) failures + 1 else 0
+                    publish(
+                        state.copy(
+                            kind = ShortformContentKind.UNKNOWN,
+                            paused = false,
+                            excluded = false,
+                            reason = prediction?.uiClass?.name ?: "INFERENCE_UNAVAILABLE"
+                        )
+                    )
+                    return@launch
+                }
+
+                failures = 0
+                if (isNonReel) {
+                    knownNonReel = true
+                    publish(
+                        state.copy(
+                            kind = ShortformContentKind.UNKNOWN,
+                            paused = true,
+                            excluded = true,
+                            reason = prediction?.uiClass?.name ?: "NON_REEL_CONFIRMED"
+                        )
+                    )
+                } else {
+                    knownNonReel = false
+                    val isAd = confirmedKind == ShortformContentKind.AD
+                    publish(
+                        state.copy(
+                            kind = confirmedKind,
+                            paused = !countsWatchTime(confirmedKind),
+                            excluded = isAd,
+                            reason = prediction?.uiClass?.name ?: confirmedKind.name
+                        )
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
                 if (accepts(token)) {
                     failures++
-                    publish(state.copy(kind = ShortformContentKind.UNKNOWN, paused = true, reason = "INFERENCE_FAILED"))
+                    confirmation.reset()
+                    publish(
+                        state.copy(
+                            kind = ShortformContentKind.UNKNOWN,
+                            paused = true,
+                            reason = "INFERENCE_FAILED"
+                        )
+                    )
                     onFailure(error)
                 }
             }
@@ -119,11 +206,21 @@ class InstagramRecognitionPipeline(private val scope: CoroutineScope, private va
     }
 
     fun accepts(token: InstagramFrameToken): Boolean = token.owner == owner() &&
-        token.owner == currentOwner && token.generation == generation && token.contentKey == state.contentKey &&
-        state.screen == ShortformScreenState.INSIDE
+            token.owner == currentOwner && token.generation == generation &&
+            token.contentKey == state.contentKey && state.screen == ShortformScreenState.INSIDE
 
-    private fun invalidate() { generation++; job?.cancel(); job = null }
-    private fun publish(value: InstagramRecognitionState) { state = value; emit(value) }
+    private fun invalidate() {
+        generation++
+        job?.cancel()
+        job = null
+        confirmation.reset()
+    }
+
+    private fun publish(value: InstagramRecognitionState) {
+        state = value
+        emit(value)
+    }
+
     fun stop() {
         invalidate()
         currentOwner = null

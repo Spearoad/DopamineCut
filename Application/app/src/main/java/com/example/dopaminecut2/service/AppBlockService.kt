@@ -276,19 +276,19 @@ class AppBlockService : AccessibilityService() {
             onProvisionalSettled = ::onProvisionalSettled,
             admitNormalSession = { platform ->
                 platform == currentAppManager?.platform && measurementEnabled &&
-                    foregroundSnapshotReady && snapshots.cached() != null &&
-                    !enforceManagedGoals(countAdmission = true)
+                        foregroundSnapshotReady && snapshots.cached() != null &&
+                        !enforceManagedGoals(countAdmission = true)
             },
             admitRepeatedNormalSession = { platform ->
                 platform == currentAppManager?.platform && measurementEnabled &&
-                    foregroundSnapshotReady && snapshots.cached() != null &&
-                    !enforceManagedGoals(countAdmission = false)
+                        foregroundSnapshotReady && snapshots.cached() != null &&
+                        !enforceManagedGoals(countAdmission = false)
             }
         )
         val reader = AccessibilitySnapshotReader(this, powerManager, keyguardManager, appManagers.keys)
         snapshots = AsyncSnapshotCoordinator(serviceScope, snapshotDispatcher, monotonicClock::nowMillis,
             owner = { sessionManager.active()?.takeIf { sessionReady && measurementEnabled && serviceActive &&
-                it.userId == dependencies.authRepository.currentUserId() && it.date == dependencies.dateIdProvider.currentDateId() } },
+                    it.userId == dependencies.authRepository.currentUserId() && it.date == dependencies.dateIdProvider.currentDateId() } },
             read = { reader.read() },
             consume = { observed ->
                 try {
@@ -297,8 +297,8 @@ class AppBlockService : AccessibilityService() {
                     if (BuildConfig.DEBUG && monotonicClock.nowMillis() - lastSnapshotDiagnosticMs >= 5_000) {
                         lastSnapshotDiagnosticMs = monotonicClock.nowMillis()
                         Log.d("UiSnapshotDiagnostic", "event=APPLIED readMs=${observed.completedMs - observed.startedMs} " +
-                            "nodes=${observed.value.snapshot?.elements?.size ?: 0} complete=${observed.value.complete} " +
-                            "main=${Looper.myLooper() == Looper.getMainLooper()}")
+                                "nodes=${observed.value.snapshot?.elements?.size ?: 0} complete=${observed.value.complete} " +
+                                "main=${Looper.myLooper() == Looper.getMainLooper()}")
                     }
                 } catch (error: Exception) {
                     if (error is CancellationException) throw error
@@ -315,17 +315,17 @@ class AppBlockService : AccessibilityService() {
             appManagers.getValue(SupportedPlatform.INSTAGRAM.packageName) as InstagramManager,
             monotonicClock::nowMillis,
             owner = { sessionManager.active()?.takeIf { sessionReady && measurementEnabled &&
-                dependencies.authRepository.currentUserId() == it.userId &&
-                currentAppManager?.platform == SupportedPlatform.INSTAGRAM } },
+                    dependencies.authRepository.currentUserId() == it.userId &&
+                    currentAppManager?.platform == SupportedPlatform.INSTAGRAM } },
             infer = ::captureInstagramPrediction, emit = ::applyInstagramState,
             onFailure = { reportFailureOnMain("Instagram 콘텐츠 확인", it) })
         kakaotalkPipeline = KakaotalkRecognitionPipeline(serviceScope,
             appManagers.getValue(SupportedPlatform.KAKAOTALK.packageName) as KakaotalkManager,
             monotonicClock::nowMillis,
             owner = { sessionManager.active()?.takeIf { sessionReady && measurementEnabled &&
-                dependencies.authRepository.currentUserId() == it.userId &&
-                dependencies.dateIdProvider.currentDateId() == it.date &&
-                currentAppManager?.platform == SupportedPlatform.KAKAOTALK } },
+                    dependencies.authRepository.currentUserId() == it.userId &&
+                    dependencies.dateIdProvider.currentDateId() == it.date &&
+                    currentAppManager?.platform == SupportedPlatform.KAKAOTALK } },
             infer = ::captureKakaotalkPrediction, emit = ::applyKakaotalkState,
             trace = { if (BuildConfig.DEBUG) Log.d("KakaoTrackingDiagnostic", it) },
             cvAvailable = { kakaotalkContentClassifier != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R },
@@ -447,8 +447,8 @@ class AppBlockService : AccessibilityService() {
         if (!serviceActive || !sessionReady || !measurementEnabled || !::snapshots.isInitialized) return false
         val observed = withTimeoutOrNull(1_500) { snapshots.awaitFresh(notBeforeMs = notBeforeMs) }
         return observed != null && foregroundSnapshotReady && snapshots.cached() != null &&
-            observed.value.snapshot != null && observed.value.packageName == currentAppManager?.packageName &&
-            !goalPresenter.isShowing
+                observed.value.snapshot != null && observed.value.packageName == currentAppManager?.packageName &&
+                !goalPresenter.isShowing
     }
 
     private fun pauseForUncertainScreen() {
@@ -598,25 +598,45 @@ class AppBlockService : AccessibilityService() {
             clearLatestOcr()
         }
 
-        if (currentContentKey != state.contentKey)
+        if (identityChanged)
             viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
         currentContentKey = state.contentKey
         currentContentKind = state.kind
         currentScreenState = state.screen
-        currentIsShortform = state.screen == ShortformScreenState.INSIDE && !state.paused
-        if (state.screen == ShortformScreenState.OUTSIDE || state.kind == ShortformContentKind.AD)
-            viewTracker.onScreenChanged(false, null, null, state.kind)
-        else if (state.paused || state.kind == ShortformContentKind.UNKNOWN) viewTracker.setPaused(true)
-        else {
-            viewTracker.onScreenChanged(true, SupportedPlatform.INSTAGRAM, state.contentKey, state.kind)
-            viewTracker.setPaused(false)
+        currentIsShortform = state.screen == ShortformScreenState.INSIDE && !state.paused && !state.excluded
+
+        when {
+            state.screen == ShortformScreenState.OUTSIDE || state.contentKey == null ->
+                viewTracker.onScreenChanged(false, null, null, ShortformContentKind.UNKNOWN)
+            state.excluded || state.kind == ShortformContentKind.AD -> {
+                val provisionalId = viewTracker.activeViewSessionId()?.takeIf { viewTracker.isProvisional() }
+                if (provisionalId != null) {
+                    viewTracker.resolveProvisional(provisionalId, ShortformContentKind.AD, state.contentKey)
+                } else {
+                    viewTracker.onScreenChanged(false, null, null, ShortformContentKind.AD)
+                }
+            }
+            state.paused -> viewTracker.setPaused(true)
+            state.kind == ShortformContentKind.UNKNOWN -> {
+                viewTracker.beginProvisional(SupportedPlatform.INSTAGRAM, state.contentKey)
+                viewTracker.setPaused(false)
+            }
+            else -> {
+                val provisionalId = viewTracker.activeViewSessionId()?.takeIf { viewTracker.isProvisional() }
+                val promoted = provisionalId != null &&
+                        viewTracker.resolveProvisional(provisionalId, state.kind, state.contentKey)
+                if (!promoted) viewTracker.onScreenChanged(true, SupportedPlatform.INSTAGRAM,
+                    state.contentKey, state.kind)
+                // Promotion may synchronously show an intervention and pause this session.
+                viewTracker.setPaused(goalPresenter.isShowing)
+            }
         }
         if (BuildConfig.DEBUG && File(cacheDir, "instagram-diagnostics.enabled").exists()) {
-            val signature = "${state.reason}:${state.contentKey}:${state.paused}:${state.kind}"
+            val signature = "${state.reason}:${state.contentKey}:${state.paused}:${state.excluded}:${state.kind}"
             if (signature != instagramTrackingDiagnosticSignature) {
                 instagramTrackingDiagnosticSignature = signature
                 Log.d("InstagramTrackingDiagnostic", "reason=${state.reason} kind=${state.kind} " +
-                    "paused=${state.paused} key=${state.contentKey?.take(12)}")
+                        "paused=${state.paused} excluded=${state.excluded} key=${state.contentKey?.take(12)}")
             }
         }
     }
@@ -649,7 +669,8 @@ class AppBlockService : AccessibilityService() {
         if (!currentIsShortform) {
             if (manager.platform == SupportedPlatform.YOUTUBE &&
                 (currentScreenState == ShortformScreenState.CANDIDATE ||
-                        entryEvidenceGrace.shouldRetain(detection.state, monotonicClock.nowMillis()))) {
+                        entryEvidenceGrace.shouldRetain(detection.state, monotonicClock.nowMillis()))
+            ) {
                 viewTracker.setPaused(true)
                 retryYoutubeContentIfDue()
                 return
@@ -657,7 +678,9 @@ class AppBlockService : AccessibilityService() {
             stopShortformTracking()
             return
         }
-        if (manager.platform == SupportedPlatform.YOUTUBE) entryEvidenceGrace.shouldRetain(detection.state, monotonicClock.nowMillis())
+        if (manager.platform == SupportedPlatform.YOUTUBE) {
+            entryEvidenceGrace.shouldRetain(detection.state, monotonicClock.nowMillis())
+        }
 
         if (currentScreenState == ShortformScreenState.OVERLAY) {
             if (previousScreenState != ShortformScreenState.OVERLAY) {
@@ -668,19 +691,19 @@ class AppBlockService : AccessibilityService() {
                 // Keep cached text and the active TemporalOcrCollector's buffer for this video.
                 if (BuildConfig.DEBUG) Log.d("YoutubeOverlayDiagnostic",
                     "event=PAUSED evidence=${detection.evidence} session=${viewTracker.activeViewSessionId()} " +
-                        "key=${currentContentKey?.take(12)} cachedOcrChars=${latestOcrText.length} " +
-                        "analysisPaused=true viewingTimeContinues=${viewTracker.canContinueDuringInteraction()}")
+                            "key=${currentContentKey?.take(12)} cachedOcrChars=${latestOcrText.length} " +
+                            "analysisPaused=true viewingTimeContinues=${viewTracker.canContinueDuringInteraction()}")
             }
             viewTracker.onInteractionOverlay()
             return
         }
         if (previousScreenState == ShortformScreenState.OVERLAY && BuildConfig.DEBUG) {
             Log.d("YoutubeOverlayDiagnostic", "event=RETURNED session=${viewTracker.activeViewSessionId()} " +
-                "key=${currentContentKey?.take(12)} cachedOcrChars=${latestOcrText.length}")
+                    "key=${currentContentKey?.take(12)} cachedOcrChars=${latestOcrText.length}")
         }
         if (manager.platform == SupportedPlatform.YOUTUBE &&
-            com.example.dopaminecut2.logic.shortform.YoutubeAdEvidenceDetector.detect(currentSnapshot).explicitAd) {
-            // 광고에는 작성자 핸들이 없을 수 있다. 광고를 이전 일반 영상의 세션에 붙이지 않는다.
+            com.example.dopaminecut2.logic.shortform.YoutubeAdEvidenceDetector.detect(currentSnapshot).explicitAd
+        ) {
             if (currentContentKind != ShortformContentKind.AD) {
                 if (viewTracker.isProvisional()) {
                     viewTracker.activeViewSessionId()?.let {
@@ -701,11 +724,12 @@ class AppBlockService : AccessibilityService() {
                 retryYoutubeContentIfDue()
                 return
             }
-            // 라이브는 텍스트 변화가 아니라 체류 세션으로 시간을 측정한다.
             viewTracker.setPaused(!youtubeLiveSession.confirmed)
             if (youtubeLiveSession.confirmed) {
-                viewTracker.onScreenChanged(true, SupportedPlatform.YOUTUBE,
-                    youtubeLiveSession.key, youtubeLiveSession.kind)
+                viewTracker.onScreenChanged(
+                    true, SupportedPlatform.YOUTUBE,
+                    youtubeLiveSession.key, youtubeLiveSession.kind
+                )
             }
             retryYoutubeContentIfDue()
             return
@@ -720,7 +744,6 @@ class AppBlockService : AccessibilityService() {
             if (currentContentKey == null && currentScreenState == ShortformScreenState.INSIDE) {
                 beginYoutubeContent("youtube_probe_${java.util.UUID.randomUUID()}")
             }
-            // 작성자·제목이 없는 화면에서 임의 식별자를 만들거나 이전 영상에 시간을 붙이지 않는다.
             viewTracker.setPaused(!viewTracker.isProvisional() || currentContentKey?.startsWith("youtube_probe_") != true)
             retryYoutubeContentIfDue()
             return
@@ -734,8 +757,8 @@ class AppBlockService : AccessibilityService() {
             return
         }
         if (manager.platform == SupportedPlatform.YOUTUBE && contentKey != currentContentKey &&
-            BuildConfig.DEBUG && File(cacheDir, "identity-diagnostics.enabled").exists()) {
-            // 개발자가 명시적으로 켠 로컬 진단에만 문자열을 기록한다. 운영 로그/서버에는 기록하지 않는다.
+            BuildConfig.DEBUG && File(cacheDir, "identity-diagnostics.enabled").exists()
+        ) {
             Log.d("YoutubeIdentityDiagnostic", "creator=${identity.creator}; title=${identity.title}; key=$contentKey")
         }
 
@@ -777,7 +800,7 @@ class AppBlockService : AccessibilityService() {
         currentContentKind = state.kind
         currentScreenState = state.screen
         currentIsShortform = state.screen == ShortformScreenState.INSIDE &&
-            !state.paused && !state.excluded && state.kind == ShortformContentKind.NORMAL
+                !state.paused && !state.excluded && state.kind == ShortformContentKind.NORMAL
 
         when {
             state.contentKey == null || state.excluded || state.kind == ShortformContentKind.AD ->
@@ -790,7 +813,7 @@ class AppBlockService : AccessibilityService() {
             else -> {
                 val provisionalId = viewTracker.activeViewSessionId()?.takeIf { viewTracker.isProvisional() }
                 val promoted = provisionalId != null &&
-                    viewTracker.resolveProvisional(provisionalId, state.kind, state.contentKey)
+                        viewTracker.resolveProvisional(provisionalId, state.kind, state.contentKey)
                 if (!promoted) viewTracker.onScreenChanged(true, SupportedPlatform.KAKAOTALK,
                     state.contentKey, state.kind)
                 // Promotion may synchronously show an intervention and pause this session.
@@ -802,9 +825,9 @@ class AppBlockService : AccessibilityService() {
             if (signature != kakaotalkDiagnosticSignature) {
                 kakaotalkDiagnosticSignature = signature
                 Log.d("KakaoTrackingDiagnostic", "reason=${state.reason} kind=${state.kind} " +
-                    "paused=${state.paused} excluded=${state.excluded} generation=${state.generation} " +
-                    "attempt=${state.attempts} failures=${state.executionFailures} " +
-                    "unconfirmed=${state.unconfirmedResults} key=${state.contentKey?.take(12)}")
+                        "paused=${state.paused} excluded=${state.excluded} generation=${state.generation} " +
+                        "attempt=${state.attempts} failures=${state.executionFailures} " +
+                        "unconfirmed=${state.unconfirmedResults} key=${state.contentKey?.take(12)}")
             }
         }
     }
@@ -831,9 +854,9 @@ class AppBlockService : AccessibilityService() {
             if (snapshots.cached()?.epoch != captureEpoch) return null
             if (!kakaotalkPipeline.accepts(token)) return null
             if (BuildConfig.DEBUG) Log.d(TAG, "KakaoTalk 콘텐츠 판정: uiClass=${prediction.uiClass}, " +
-                "verdict=${prediction.contentKind} (conf=${"%.3f".format(prediction.confidence)}, " +
-                "latencyMs=${monotonicClock.nowMillis() - started}, " +
-                "attempt=${kakaotalkPipeline.state.attempts}, key=${token.contentKey.take(12)})")
+                    "verdict=${prediction.contentKind} (conf=${"%.3f".format(prediction.confidence)}, " +
+                    "latencyMs=${monotonicClock.nowMillis() - started}, " +
+                    "attempt=${kakaotalkPipeline.state.attempts}, key=${token.contentKey.take(12)})")
             prediction
         } finally { bitmap.recycle() }
     }
@@ -978,7 +1001,7 @@ class AppBlockService : AccessibilityService() {
                 if (!youtubeIdentityReady || contentKey == null) {
                     if (BuildConfig.DEBUG) Log.d("YoutubeClassification",
                         "platform=YOUTUBE event=NOT_APPLIED reason=IDENTITY_NOT_READY " +
-                            "identityReady=$youtubeIdentityReady hasKey=${contentKey != null} confirmed=$confirmedKind")
+                                "identityReady=$youtubeIdentityReady hasKey=${contentKey != null} confirmed=$confirmedKind")
                     viewTracker.setPaused(true)
                     return@launch
                 }
@@ -1112,7 +1135,7 @@ class AppBlockService : AccessibilityService() {
         accountAndPersistCurrentRunTime()
         if (::viewTracker.isInitialized) stopShortformTracking()
         if (::viewTracker.isInitialized && (transition.previous?.userId != transition.current?.userId ||
-                transition.previous?.date != transition.current?.date)) viewTracker.clearRecentCountHistory()
+                    transition.previous?.date != transition.current?.date)) viewTracker.clearRecentCountHistory()
         entryEvidenceGrace.reset()
         recognitionHealth = com.example.dopaminecut2.logic.shortform.RecognitionHealth()
         if (transition.previous?.userId != transition.current?.userId) {
@@ -1305,10 +1328,10 @@ class AppBlockService : AccessibilityService() {
                 val text = collector.collect(
                     isCurrent = {
                         serviceActive && contentAnalysisEnabled && measurementEnabled &&
-                            !owner.completed && !owner.resolved &&
-                            dependencies.authRepository.currentUserId() == owner.userId &&
-                            currentAppManager?.platform == delta.platform &&
-                            viewTracker.activeViewSessionId() == delta.viewSessionId
+                                !owner.completed && !owner.resolved &&
+                                dependencies.authRepository.currentUserId() == owner.userId &&
+                                currentAppManager?.platform == delta.platform &&
+                                viewTracker.activeViewSessionId() == delta.viewSessionId
                     },
                     canCapture = { isCurrentClassificationFrame(delta, owner, screenGeneration) },
                     onPauseChanged = { paused, chars ->
@@ -1364,7 +1387,7 @@ class AppBlockService : AccessibilityService() {
             monotonicClock.nowMillis() - latestOcrElapsedMs <= OCR_CACHE_MAX_AGE_MS &&
             latestOcrText.isNotBlank()) return latestOcrText
         val fallback = if (delta.platform == SupportedPlatform.YOUTUBE) ""
-            else ocrTextSanitizer.sanitizeFallback(currentSnapshot.texts)
+        else ocrTextSanitizer.sanitizeFallback(currentSnapshot.texts)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return fallback
         val snapshot = currentSnapshot
         val layout = contentRegionResolver.layoutKey(snapshot)
@@ -1408,8 +1431,8 @@ class AppBlockService : AccessibilityService() {
     private fun resolveCategory(owner: NormalSessionOwner, result: ClassifiedContent) {
         if (BuildConfig.DEBUG) Log.d("CategoryClassificationDiagnostic",
             "event=RESOLVE session=${result.viewSessionId} category=${result.category} " +
-                "status=${result.status} source=${result.source} reason=${result.reason} " +
-                "alreadyResolved=${owner.resolved}")
+                    "status=${result.status} source=${result.source} reason=${result.reason} " +
+                    "alreadyResolved=${owner.resolved}")
         if (owner.resolved) return
         owner.resolved = true
         enqueueUsageWrite(UsageWriteCommand.Category(owner.userId, owner.date, owner.viewSessionId,
@@ -1434,7 +1457,7 @@ class AppBlockService : AccessibilityService() {
     }
 
     private fun enqueueUsageWrite(command: UsageWriteCommand,
-        receipt: CompletableDeferred<Result<Unit>>? = null) {
+                                  receipt: CompletableDeferred<Result<Unit>>? = null) {
         usageWrites.submit(command, receipt ?: CompletableDeferred())
     }
 
@@ -1571,7 +1594,7 @@ class AppBlockService : AccessibilityService() {
                 if (action == com.example.dopaminecut2.logic.GoalInterventionAction.NONE) continue
                 if (BuildConfig.DEBUG) Log.d("GoalIntervention",
                     "platform=${manager.platform} metric=${goal.metric} mode=${goal.intervention} action=$action " +
-                        "screen=$currentScreenState content=$currentContentKind eligible=$eligible")
+                            "screen=$currentScreenState content=$currentContentKind eligible=$eligible")
                 if (action == com.example.dopaminecut2.logic.GoalInterventionAction.NOTIFY) {
                     if (goalPresenter.notify(request)) {
                         ledger = ledger.copy(notified = (ledger.notified + request.key).toList().takeLast(100).toSet())
@@ -1659,8 +1682,8 @@ class AppBlockService : AccessibilityService() {
     }
 
     private fun isYoutubeInteractionViewing(): Boolean = measurementEnabled && sessionReady && foregroundSnapshotReady &&
-        !goalPresenter.isShowing && currentAppManager?.platform == SupportedPlatform.YOUTUBE &&
-        currentScreenState == ShortformScreenState.OVERLAY && viewTracker.canContinueDuringInteraction()
+            !goalPresenter.isShowing && currentAppManager?.platform == SupportedPlatform.YOUTUBE &&
+            currentScreenState == ShortformScreenState.OVERLAY && viewTracker.canContinueDuringInteraction()
 
     private fun enforceContinuousBreak() {
         val now = monotonicClock.nowMillis()
@@ -1670,7 +1693,7 @@ class AppBlockService : AccessibilityService() {
             continuousWatchSec = 0; continuousRemainderMs = 0; continuousNoticeSent = false; return
         }
         if (!isYoutubeInteractionViewing() && (currentScreenState != ShortformScreenState.INSIDE ||
-                currentContentKind in setOf(ShortformContentKind.UNKNOWN, ShortformContentKind.AD))) return
+                    currentContentKind in setOf(ShortformContentKind.UNKNOWN, ShortformContentKind.AD))) return
         val goal = managedGoals.firstOrNull { it.metric == com.example.dopaminecut2.domain.GoalMetric.DAILY_TIME &&
                 it.status == com.example.dopaminecut2.domain.GoalStatus.ACTIVE && currentAppManager?.platform in it.platforms } ?: return
         continuousRemainderMs += elapsedMs
