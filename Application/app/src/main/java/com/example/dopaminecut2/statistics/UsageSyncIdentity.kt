@@ -5,10 +5,21 @@ import java.security.MessageDigest
 /** Stable across retries, including a lost commit acknowledgement. Never contains raw text. */
 object UsageSyncIdentity {
     fun payload(snapshot: UsageSnapshot): Map<String, Any> = mapOf(
-        "app_usage" to snapshot.appUsage.mapValues { (_, v) -> mapOf("app_time_sec" to v.runTimeSec,
-            "shortform_time_sec" to v.shortformTimeSec, "shortform_count" to v.shortformCount) },
-        "category_usage" to snapshot.categoryUsage.mapValues { (_, v) -> mapOf("count" to v.count, "duration_sec" to v.durationSec) },
-        "hourly_shortform_count" to snapshot.hourlyShortformCount, "deducted_score" to snapshot.deductedScore)
+        "app_usage" to snapshot.appUsage.mapValues { (_, v) ->
+            mapOf(
+                "app_time_sec" to v.runTimeSec,
+                "shortform_time_sec" to v.shortformTimeSec,
+                "shortform_count" to v.shortformCount,
+                "hourly_shortform_time_sec" to v.hourlyShortformTimeSec,
+                "hourly_shortform_count" to v.hourlyShortformCount
+            )
+        },
+        "category_usage" to snapshot.categoryUsage.mapValues { (_, v) ->
+            mapOf("count" to v.count, "duration_sec" to v.durationSec)
+        },
+        "hourly_shortform_count" to snapshot.hourlyShortformCount,
+        "deducted_score" to snapshot.deductedScore
+    )
 
     private fun canonical(value: Any): String = when (value) {
         is Map<*, *> -> value.entries.sortedBy { it.key.toString() }.joinToString("", "{", "}") {

@@ -31,33 +31,50 @@ data class UsageSnapshot(
         else fromDaily(userId, statistics).copy(revision = revision, shortformSessions = shortformSessions)
 
     fun acknowledge(uploaded: UsageSnapshot): UsageSnapshot = if (baseRemoteRevision != uploaded.baseRemoteRevision) this
-        else copy(baseRemoteRevision = uploaded.baseRemoteRevision + 1,
-            baseRemoteDigest = UsageSyncIdentity.digest(UsageSyncIdentity.payload(uploaded)), dirty = revision != uploaded.revision)
+    else copy(baseRemoteRevision = uploaded.baseRemoteRevision + 1,
+        baseRemoteDigest = UsageSyncIdentity.digest(UsageSyncIdentity.payload(uploaded)), dirty = revision != uploaded.revision)
+
     fun accumulate(event: UsageEvent): UsageSnapshot {
         require(event.userId == userId && event.date == date)
         val platformKey = event.platform.storageKey
+        val calendar = Calendar.getInstance().apply { timeInMillis = event.createdAtEpochMs }
+        val hour = calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
+
         val currentPlatform = appUsage[platformKey] ?: AppUsage()
+        val nextPlatformHourlyTime = if (event.shortformTimeSec > 0L) {
+            currentPlatform.hourlyShortformTimeSec +
+                    (hour to (currentPlatform.hourlyShortformTimeSec[hour] ?: 0L) + event.shortformTimeSec)
+        } else {
+            currentPlatform.hourlyShortformTimeSec
+        }
+        val nextPlatformHourlyCount = if (event.shortformCount > 0L) {
+            currentPlatform.hourlyShortformCount +
+                    (hour to (currentPlatform.hourlyShortformCount[hour] ?: 0L) + event.shortformCount)
+        } else {
+            currentPlatform.hourlyShortformCount
+        }
+
         val nextPlatforms = appUsage + (
-            platformKey to currentPlatform.copy(
-                runTimeSec = currentPlatform.runTimeSec + event.runTimeSec,
-                shortformTimeSec = currentPlatform.shortformTimeSec + event.shortformTimeSec,
-                shortformCount = currentPlatform.shortformCount + event.shortformCount
-            )
-        )
+                platformKey to currentPlatform.copy(
+                    runTimeSec = currentPlatform.runTimeSec + event.runTimeSec,
+                    shortformTimeSec = currentPlatform.shortformTimeSec + event.shortformTimeSec,
+                    shortformCount = currentPlatform.shortformCount + event.shortformCount,
+                    hourlyShortformTimeSec = nextPlatformHourlyTime,
+                    hourlyShortformCount = nextPlatformHourlyCount
+                )
+                )
 
         val nextCategories = event.category?.let { category ->
             val current = categoryUsage[category.id] ?: CategoryUsage()
             categoryUsage + (
-                category.id to current.copy(
-                    count = current.count + event.shortformCount,
-                    durationSec = current.durationSec + event.shortformTimeSec
-                )
-            )
+                    category.id to current.copy(
+                        count = current.count + event.shortformCount,
+                        durationSec = current.durationSec + event.shortformTimeSec
+                    )
+                    )
         } ?: categoryUsage
 
         val nextHourly = if (event.shortformCount > 0L) {
-            val calendar = Calendar.getInstance().apply { timeInMillis = event.createdAtEpochMs }
-            val hour = calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
             hourlyShortformCount + (hour to (hourlyShortformCount[hour] ?: 0L) + event.shortformCount)
         } else {
             hourlyShortformCount
@@ -114,7 +131,7 @@ data class UsageSnapshot(
             )
         ) else initialRecord
         val scoreDelta = (record.classification?.deductedScore ?: 0L) -
-            (previous?.classification?.deductedScore ?: 0L)
+                (previous?.classification?.deductedScore ?: 0L)
         return accumulate(
             UsageEvent(
                 userId = userId,
@@ -166,8 +183,8 @@ data class UsageSnapshot(
             deductedScore = deductedScore + classification.deductedScore,
             updatedAtEpochMs = if (aggregatesChanged) maxOf(updatedAtEpochMs, resolvedAtEpochMs) else updatedAtEpochMs,
             shortformSessions = shortformSessions + (
-                viewSessionId to record.copy(category = classification.category, classification = classification)
-            )
+                    viewSessionId to record.copy(category = classification.category, classification = classification)
+                    )
         )
     }
 

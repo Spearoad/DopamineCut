@@ -8,7 +8,8 @@ import com.example.dopaminecut2.data.model.DailyStatistics
 data class UsageSummary(
     val appUsage: Map<String, AppUsage>,
     val categoryUsage: Map<String, CategoryUsage>,
-    val hourlyShortformCount: List<Long>
+    val hourlyShortformCount: List<Long>,
+    val hourlyShortformTimeSec: List<Long> = List(24) { 0L }
 ) {
     val totalAppTimeSec: Long get() = appUsage.values.sumOf(AppUsage::runTimeSec)
     val totalShortformTimeSec: Long get() = appUsage.values.sumOf(AppUsage::shortformTimeSec)
@@ -19,13 +20,28 @@ data class UsageSummary(
             val apps = linkedMapOf<String, AppUsage>()
             val categories = linkedMapOf<String, CategoryUsage>()
             val hours = MutableList(24) { 0L }
+            val timeHours = MutableList(24) { 0L }
+
             statistics.forEach { day ->
                 day.appUsage.forEach { (platform, usage) ->
                     val current = apps[platform] ?: AppUsage()
+                    val mergedHourlyTime = current.hourlyShortformTimeSec.toMutableMap()
+                    usage.hourlyShortformTimeSec.forEach { (hour, sec) ->
+                        mergedHourlyTime[hour] = (mergedHourlyTime[hour] ?: 0L) + sec
+                        hour.toIntOrNull()?.takeIf { it in timeHours.indices }?.let { index ->
+                            timeHours[index] += sec
+                        }
+                    }
+                    val mergedHourlyCount = current.hourlyShortformCount.toMutableMap()
+                    usage.hourlyShortformCount.forEach { (hour, count) ->
+                        mergedHourlyCount[hour] = (mergedHourlyCount[hour] ?: 0L) + count
+                    }
                     apps[platform] = AppUsage(
                         runTimeSec = current.runTimeSec + usage.runTimeSec,
                         shortformTimeSec = current.shortformTimeSec + usage.shortformTimeSec,
-                        shortformCount = current.shortformCount + usage.shortformCount
+                        shortformCount = current.shortformCount + usage.shortformCount,
+                        hourlyShortformTimeSec = mergedHourlyTime.toMap(),
+                        hourlyShortformCount = mergedHourlyCount.toMap()
                     )
                 }
                 day.categoryUsage.forEach { (category, usage) ->
@@ -35,13 +51,28 @@ data class UsageSummary(
                         durationSec = current.durationSec + usage.durationSec
                     )
                 }
-                day.hourlyShortformCount.forEach { (hour, count) ->
-                    hour.toIntOrNull()?.takeIf { it in hours.indices }?.let { index ->
-                        hours[index] += count
+                if (day.hourlyShortformCount.isNotEmpty()) {
+                    day.hourlyShortformCount.forEach { (hour, count) ->
+                        hour.toIntOrNull()?.takeIf { it in hours.indices }?.let { index ->
+                            hours[index] += count
+                        }
+                    }
+                } else {
+                    day.appUsage.values.forEach { usage ->
+                        usage.hourlyShortformCount.forEach { (hour, count) ->
+                            hour.toIntOrNull()?.takeIf { it in hours.indices }?.let { index ->
+                                hours[index] += count
+                            }
+                        }
                     }
                 }
             }
-            return UsageSummary(apps.toMap(), categories.toMap(), hours.toList())
+            return UsageSummary(
+                appUsage = apps.toMap(),
+                categoryUsage = categories.toMap(),
+                hourlyShortformCount = hours.toList(),
+                hourlyShortformTimeSec = timeHours.toList()
+            )
         }
     }
 }
