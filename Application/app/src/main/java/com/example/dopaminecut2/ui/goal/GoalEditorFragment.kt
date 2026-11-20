@@ -1,5 +1,6 @@
 package com.example.dopaminecut2.ui.goal
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -42,7 +43,22 @@ class GoalEditorFragment : Fragment() {
             )
         }
     }
+
+    private data class MetricScheduleDraft(
+        var isCombinedScope: Boolean = true,
+        var selectedAppIndex: Int = 0,
+        var isWeeklyMode: Boolean = true,
+        var dailyTarget: String = "30",
+        var bulkTarget: String = "30",
+        val dayChecked: BooleanArray = BooleanArray(7) { true },
+        val dayTargets: Array<String> = arrayOf("30", "30", "30", "30", "30", "60", "60"),
+        var excludeHolidays: Boolean = false
+    )
+
+    private val drafts = mutableMapOf<GoalMetric, MetricScheduleDraft>()
     private var rendering = false
+    private var initializedFromLoadedState = false
+
     private val notificationPermission = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
     ) {
@@ -59,8 +75,315 @@ class GoalEditorFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val navigator = AppNavigator(findNavController())
+        val appIds = listOf("YOUTUBE", "INSTAGRAM", "KAKAOTALK")
+        val appNames = listOf("YouTube", "Instagram", "KakaoTalk")
+        val appTabs = listOf(binding.tabAppYoutube, binding.tabAppInstagram, binding.tabAppKakaotalk)
+        val dayRowContainers = listOf(
+            binding.rowDayMon, binding.rowDayTue, binding.rowDayWed,
+            binding.rowDayThu, binding.rowDayFri, binding.rowDaySat, binding.rowDaySun
+        )
+        val dayRows = listOf(
+            Triple(binding.cbDayMon, binding.etDayMon, binding.tvUnitMon),
+            Triple(binding.cbDayTue, binding.etDayTue, binding.tvUnitTue),
+            Triple(binding.cbDayWed, binding.etDayWed, binding.tvUnitWed),
+            Triple(binding.cbDayThu, binding.etDayThu, binding.tvUnitThu),
+            Triple(binding.cbDayFri, binding.etDayFri, binding.tvUnitFri),
+            Triple(binding.cbDaySat, binding.etDaySat, binding.tvUnitSat),
+            Triple(binding.cbDaySun, binding.etDaySun, binding.tvUnitSun)
+        )
+        val metricTabs = listOf(
+            binding.btnMetricTabTime to GoalMetric.DAILY_TIME,
+            binding.btnMetricTabCount to GoalMetric.DAILY_COUNT,
+            binding.btnMetricTabAppTime to GoalMetric.APP_TIME
+        )
 
-        setupWeeklyScheduleUi(navigator)
+        val todayIndex = when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> 0
+            Calendar.TUESDAY -> 1
+            Calendar.WEDNESDAY -> 2
+            Calendar.THURSDAY -> 3
+            Calendar.FRIDAY -> 4
+            Calendar.SATURDAY -> 5
+            else -> 6
+        }
+
+        fun defaultDraftFor(metric: GoalMetric, existingValue: String?, platforms: Set<String>): MetricScheduleDraft {
+            val isCount = metric == GoalMetric.DAILY_COUNT
+            val defaultWeekday = if (isCount) "10" else "30"
+            val defaultWeekend = if (isCount) "20" else "60"
+            val initialVal = existingValue?.takeIf { it.isNotBlank() }
+            val singleAppIdx = if (platforms.size == 1) appIds.indexOf(platforms.first()).coerceAtLeast(0) else 0
+            return MetricScheduleDraft(
+                isCombinedScope = platforms.size != 1,
+                selectedAppIndex = singleAppIdx,
+                isWeeklyMode = true,
+                dailyTarget = initialVal ?: defaultWeekday,
+                bulkTarget = initialVal ?: defaultWeekday,
+                dayChecked = BooleanArray(7) { true },
+                dayTargets = Array(7) { idx ->
+                    initialVal ?: if (idx in 0..4) defaultWeekday else defaultWeekend
+                },
+                excludeHolidays = false
+            )
+        }
+
+        fun draftFor(metric: GoalMetric): MetricScheduleDraft =
+            drafts.getOrPut(metric) {
+                val state = viewModel.uiState.value
+                defaultDraftFor(
+                    metric,
+                    state.values[metric],
+                    state.platformsByMetric[metric].orEmpty()
+                )
+            }
+
+        fun targetValueOf(draft: MetricScheduleDraft): String =
+            if (draft.isWeeklyMode) {
+                if (draft.dayChecked[todayIndex]) draft.dayTargets[todayIndex] else "0"
+            } else {
+                draft.dailyTarget
+            }
+
+        fun updateSegmentStyle(selected: TextView, unselected: TextView) {
+            selected.setBackgroundResource(R.drawable.bg_segmented_thumb)
+            selected.elevation = 2f
+            selected.setTextColor(Color.parseColor("#5B3FD9"))
+            selected.setTypeface(null, Typeface.BOLD)
+
+            unselected.background = null
+            unselected.elevation = 0f
+            unselected.setTextColor(Color.parseColor("#5E5A6E"))
+            unselected.setTypeface(null, Typeface.NORMAL)
+        }
+
+        fun renderBulkChipButtons(draft: MetricScheduleDraft) {
+            val weekdayAllChecked = (0..4).all { draft.dayChecked[it] }
+            val weekendAllChecked = (5..6).all { draft.dayChecked[it] }
+
+            binding.btnApplyWeekday.setBackgroundResource(
+                if (weekdayAllChecked) R.drawable.bg_outline_chip_btn_active else R.drawable.bg_outline_chip_btn
+            )
+            binding.ivCheckWeekday.visibility = if (weekdayAllChecked) View.VISIBLE else View.GONE
+
+            binding.btnApplyWeekend.setBackgroundResource(
+                if (weekendAllChecked) R.drawable.bg_outline_chip_btn_active else R.drawable.bg_outline_chip_btn
+            )
+            binding.ivCheckWeekend.visibility = if (weekendAllChecked) View.VISIBLE else View.GONE
+        }
+
+        fun renderScheduleUi(metric: GoalMetric) {
+            val draft = draftFor(metric)
+            val prevRendering = rendering
+            rendering = true
+
+            if (draft.isCombinedScope) {
+                updateSegmentStyle(binding.tabScopeCombined, binding.tabScopeIndividual)
+                binding.individualAppSegment.visibility = View.GONE
+                binding.tvScopeDescription.text = "YouTube · Instagram · KakaoTalk의 사용량을 합산해요."
+                binding.tvScheduleCardTitle.text = "합산 목표 · 적용 일정"
+            } else {
+                updateSegmentStyle(binding.tabScopeIndividual, binding.tabScopeCombined)
+                binding.individualAppSegment.visibility = View.VISIBLE
+                binding.tvScopeDescription.text = "선택한 앱마다 개별 목표 한도를 설정해요."
+                binding.tvScheduleCardTitle.text = "${appNames[draft.selectedAppIndex]} 목표 · 적용 일정"
+                appTabs.forEachIndexed { idx, tab ->
+                    if (idx == draft.selectedAppIndex) {
+                        tab.setBackgroundResource(R.drawable.bg_segmented_thumb)
+                        tab.setTextColor(Color.parseColor("#5B3FD9"))
+                        tab.setTypeface(null, Typeface.BOLD)
+                    } else {
+                        tab.background = null
+                        tab.setTextColor(Color.parseColor("#5E5A6E"))
+                        tab.setTypeface(null, Typeface.NORMAL)
+                    }
+                }
+            }
+
+            if (draft.isWeeklyMode) {
+                updateSegmentStyle(binding.tabScheduleWeekly, binding.tabScheduleDaily)
+                binding.layoutDailyContainer.visibility = View.GONE
+                binding.layoutWeeklyContainer.visibility = View.VISIBLE
+            } else {
+                updateSegmentStyle(binding.tabScheduleDaily, binding.tabScheduleWeekly)
+                binding.layoutWeeklyContainer.visibility = View.GONE
+                binding.layoutDailyContainer.visibility = View.VISIBLE
+            }
+
+            if (binding.etDailyTarget.text?.toString() != draft.dailyTarget) {
+                binding.etDailyTarget.setText(draft.dailyTarget)
+            }
+            if (binding.etBulkTarget.text?.toString() != draft.bulkTarget) {
+                binding.etBulkTarget.setText(draft.bulkTarget)
+            }
+
+            dayRows.forEachIndexed { idx, (cb, et, unit) ->
+                val checked = draft.dayChecked[idx]
+                if (cb.isChecked != checked) cb.isChecked = checked
+                et.isEnabled = checked
+                et.alpha = if (checked) 1.0f else 0.35f
+                unit.alpha = if (checked) 1.0f else 0.35f
+                if (et.text?.toString() != draft.dayTargets[idx]) {
+                    et.setText(draft.dayTargets[idx])
+                }
+            }
+
+            if (binding.cbExcludeHolidays.isChecked != draft.excludeHolidays) {
+                binding.cbExcludeHolidays.isChecked = draft.excludeHolidays
+            }
+            binding.tvHolidayDescription.text = if (draft.excludeHolidays) {
+                "공휴일에는 목표를 적용하지 않고 쉬어가요."
+            } else {
+                "선택한 요일의 목표를 공휴일에도 적용해요."
+            }
+
+            renderBulkChipButtons(draft)
+            rendering = prevRendering
+        }
+
+        fun syncMetricToViewModel(metric: GoalMetric) {
+            val draft = draftFor(metric)
+            val platforms = if (draft.isCombinedScope) {
+                appIds.toSet()
+            } else {
+                setOf(appIds[draft.selectedAppIndex])
+            }
+            viewModel.onAction(GoalEditorAction.SetPlatforms(metric, platforms))
+            viewModel.onAction(GoalEditorAction.UpdateMetricValue(metric, targetValueOf(draft)))
+        }
+
+        metricTabs.forEach { (tabView, metric) ->
+            tabView.setOnClickListener {
+                if (!rendering && viewModel.uiState.value.metric != metric) {
+                    viewModel.onAction(GoalEditorAction.EditCard(metric))
+                }
+            }
+        }
+
+        binding.tabScopeCombined.setOnClickListener {
+            val metric = viewModel.uiState.value.metric
+            val draft = draftFor(metric)
+            draft.isCombinedScope = true
+            renderScheduleUi(metric)
+            syncMetricToViewModel(metric)
+        }
+
+        binding.tabScopeIndividual.setOnClickListener {
+            val metric = viewModel.uiState.value.metric
+            val draft = draftFor(metric)
+            draft.isCombinedScope = false
+            renderScheduleUi(metric)
+            syncMetricToViewModel(metric)
+        }
+
+        appTabs.forEachIndexed { idx, tab ->
+            tab.setOnClickListener {
+                val metric = viewModel.uiState.value.metric
+                val draft = draftFor(metric)
+                draft.selectedAppIndex = idx
+                renderScheduleUi(metric)
+                syncMetricToViewModel(metric)
+            }
+        }
+
+        binding.tabScheduleDaily.setOnClickListener {
+            val metric = viewModel.uiState.value.metric
+            val draft = draftFor(metric)
+            draft.isWeeklyMode = false
+            renderScheduleUi(metric)
+            syncMetricToViewModel(metric)
+        }
+
+        binding.tabScheduleWeekly.setOnClickListener {
+            val metric = viewModel.uiState.value.metric
+            val draft = draftFor(metric)
+            draft.isWeeklyMode = true
+            renderScheduleUi(metric)
+            syncMetricToViewModel(metric)
+        }
+
+        binding.etBulkTarget.doAfterTextChanged {
+            if (!rendering) {
+                val metric = viewModel.uiState.value.metric
+                draftFor(metric).bulkTarget = it?.toString().orEmpty()
+            }
+        }
+
+        binding.btnApplyWeekday.setOnClickListener {
+            val metric = viewModel.uiState.value.metric
+            val draft = draftFor(metric)
+            val allChecked = (0..4).all { draft.dayChecked[it] }
+            if (allChecked) {
+                for (i in 0..4) draft.dayChecked[i] = false
+            } else {
+                val fallback = if (metric == GoalMetric.DAILY_COUNT) "10" else "30"
+                val value = binding.etBulkTarget.text?.toString()?.ifBlank { fallback } ?: fallback
+                for (i in 0..4) {
+                    draft.dayChecked[i] = true
+                    draft.dayTargets[i] = value
+                }
+            }
+            renderScheduleUi(metric)
+            syncMetricToViewModel(metric)
+        }
+
+        binding.btnApplyWeekend.setOnClickListener {
+            val metric = viewModel.uiState.value.metric
+            val draft = draftFor(metric)
+            val allChecked = (5..6).all { draft.dayChecked[it] }
+            if (allChecked) {
+                for (i in 5..6) draft.dayChecked[i] = false
+            } else {
+                val fallback = if (metric == GoalMetric.DAILY_COUNT) "20" else "60"
+                val value = binding.etBulkTarget.text?.toString()?.ifBlank { fallback } ?: fallback
+                for (i in 5..6) {
+                    draft.dayChecked[i] = true
+                    draft.dayTargets[i] = value
+                }
+            }
+            renderScheduleUi(metric)
+            syncMetricToViewModel(metric)
+        }
+
+        binding.etDailyTarget.doAfterTextChanged {
+            if (!rendering) {
+                val metric = viewModel.uiState.value.metric
+                val draft = draftFor(metric)
+                draft.dailyTarget = it?.toString().orEmpty()
+                if (!draft.isWeeklyMode) syncMetricToViewModel(metric)
+            }
+        }
+
+        dayRows.forEachIndexed { idx, (cb, et, _) ->
+            dayRowContainers[idx].setOnClickListener { cb.toggle() }
+            cb.setOnCheckedChangeListener { _, isChecked ->
+                if (!rendering) {
+                    val metric = viewModel.uiState.value.metric
+                    val draft = draftFor(metric)
+                    draft.dayChecked[idx] = isChecked
+                    renderScheduleUi(metric)
+                    if (idx == todayIndex && draft.isWeeklyMode) syncMetricToViewModel(metric)
+                }
+            }
+            et.doAfterTextChanged {
+                if (!rendering) {
+                    val metric = viewModel.uiState.value.metric
+                    val draft = draftFor(metric)
+                    draft.dayTargets[idx] = it?.toString().orEmpty()
+                    if (idx == todayIndex && draft.isWeeklyMode) syncMetricToViewModel(metric)
+                }
+            }
+        }
+
+        binding.cbExcludeHolidays.setOnCheckedChangeListener { _, isChecked ->
+            if (!rendering) {
+                val metric = viewModel.uiState.value.metric
+                val draft = draftFor(metric)
+                draft.excludeHolidays = isChecked
+                renderScheduleUi(metric)
+            }
+        }
+
+        binding.btnBack.setOnClickListener { navigator.back() }
 
         binding.etContinuousBreak.doAfterTextChanged {
             if (!rendering) viewModel.onAction(GoalEditorAction.SetBreakMinutes(it?.toString().orEmpty()))
@@ -143,8 +466,37 @@ class GoalEditorFragment : Fragment() {
                         navigator.back()
                         return@collect
                     }
+
+                    if (!state.isLoading && !initializedFromLoadedState) {
+                        initializedFromLoadedState = true
+                        state.selectedMetrics.forEach { m ->
+                            val draft = defaultDraftFor(
+                                m,
+                                state.values[m],
+                                state.platformsByMetric[m].orEmpty()
+                            )
+                            drafts[m] = draft
+                            syncMetricToViewModel(m)
+                        }
+                        return@collect
+                    }
+
                     rendering = true
                     val enabled = !state.isLoading && !state.isSaving
+
+                    binding.metricSwitcherGroup.isVisible = state.selectedMetrics.size > 1
+                    metricTabs.forEach { (tabView, metric) ->
+                        tabView.isVisible = metric in state.selectedMetrics
+                        if (metric == state.metric) {
+                            tabView.setBackgroundResource(R.drawable.bg_segmented_thumb)
+                            tabView.setTextColor(Color.parseColor("#5B3FD9"))
+                            tabView.setTypeface(null, Typeface.BOLD)
+                        } else {
+                            tabView.background = null
+                            tabView.setTextColor(Color.parseColor("#5E5A6E"))
+                            tabView.setTypeface(null, Typeface.NORMAL)
+                        }
+                    }
 
                     binding.tvGoalMetricTitle.text = metricLabel(state.metric)
                     val unitText = if (state.metric == GoalMetric.DAILY_COUNT) "회" else "분"
@@ -154,6 +506,8 @@ class GoalEditorFragment : Fragment() {
                         binding.tvUnitMon, binding.tvUnitTue, binding.tvUnitWed,
                         binding.tvUnitThu, binding.tvUnitFri, binding.tvUnitSat, binding.tvUnitSun
                     ).forEach { it.text = unitText }
+
+                    renderScheduleUi(state.metric)
 
                     fields.forEach { (check, input, metric) ->
                         check.isChecked = metric in state.selectedMetrics
@@ -171,7 +525,9 @@ class GoalEditorFragment : Fragment() {
                         check.isEnabled = enabled
                     }
                     binding.spinnerIntervention.isEnabled = enabled
-                    binding.spinnerIntervention.setSelection(state.intervention.ordinal)
+                    if (binding.spinnerIntervention.selectedItemPosition != state.intervention.ordinal) {
+                        binding.spinnerIntervention.setSelection(state.intervention.ordinal)
+                    }
                     binding.tvInterventionDescription.text = getString(
                         when (state.intervention) {
                             GoalIntervention.RECORD_ONLY -> R.string.goal_intervention_record_description
@@ -181,13 +537,18 @@ class GoalEditorFragment : Fragment() {
                         }
                     )
                     binding.tvValidation.text = state.validationMessage.orEmpty()
+                    binding.tvValidation.isVisible = !state.validationMessage.isNullOrBlank()
                     binding.tvUnavailable.text = if (state.isLoading) "목표를 불러오는 중…" else state.availabilityMessage
                     if (binding.etContinuousBreak.text?.toString() != state.breakMinutesText) {
                         binding.etContinuousBreak.setText(state.breakMinutesText)
                     }
                     binding.etContinuousBreak.isEnabled = enabled && GoalMetric.DAILY_TIME in state.selectedMetrics
                     renderCards(state)
+
                     binding.btnSave.isEnabled = state.canSubmit
+                    binding.btnSave.backgroundTintList = ColorStateList.valueOf(
+                        Color.parseColor(if (state.canSubmit) "#5B3FD9" else "#C7C2D9")
+                    )
                     binding.btnSave.text = if (state.isSaving) "저장 중…" else "목표 저장"
                     binding.btnCancel.isEnabled = !state.isSaving
                     rendering = false
@@ -327,227 +688,5 @@ class GoalEditorFragment : Fragment() {
         } else {
             viewModel.onAction(GoalEditorAction.Save)
         }
-    }
-
-    private fun setupWeeklyScheduleUi(navigator: AppNavigator) {
-        var isCombinedScope = true
-        var isWeeklyMode = true
-        var selectedAppIndex = 0
-        // 초기 화면 진입 시 월~금 / 토~일이 모두 체크되어 있으므로 둘 다 체크(true) 상태로 시작
-        var isWeekdayBulkApplied = true
-        var isWeekendBulkApplied = true
-        val appNames = listOf("YouTube", "Instagram", "KakaoTalk")
-
-        val appTabs = listOf(
-            binding.tabAppYoutube,
-            binding.tabAppInstagram,
-            binding.tabAppKakaotalk
-        )
-
-        val dayRowContainers = listOf(
-            binding.rowDayMon,
-            binding.rowDayTue,
-            binding.rowDayWed,
-            binding.rowDayThu,
-            binding.rowDayFri,
-            binding.rowDaySat,
-            binding.rowDaySun
-        )
-
-        val dayRows = listOf(
-            Triple(binding.cbDayMon, binding.etDayMon, binding.tvUnitMon),
-            Triple(binding.cbDayTue, binding.etDayTue, binding.tvUnitTue),
-            Triple(binding.cbDayWed, binding.etDayWed, binding.tvUnitWed),
-            Triple(binding.cbDayThu, binding.etDayThu, binding.tvUnitThu),
-            Triple(binding.cbDayFri, binding.etDayFri, binding.tvUnitFri),
-            Triple(binding.cbDaySat, binding.etDaySat, binding.tvUnitSat),
-            Triple(binding.cbDaySun, binding.etDaySun, binding.tvUnitSun)
-        )
-
-        val todayIndex = when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
-            Calendar.MONDAY -> 0
-            Calendar.TUESDAY -> 1
-            Calendar.WEDNESDAY -> 2
-            Calendar.THURSDAY -> 3
-            Calendar.FRIDAY -> 4
-            Calendar.SATURDAY -> 5
-            else -> 6
-        }
-
-        fun syncCurrentTargetToViewModel() {
-            val activeMetric = viewModel.uiState.value.metric
-            val targetStr = if (isWeeklyMode) {
-                val (cb, et, _) = dayRows[todayIndex]
-                if (cb.isChecked) et.text?.toString().orEmpty() else "0"
-            } else {
-                binding.etDailyTarget.text?.toString().orEmpty()
-            }
-            viewModel.onAction(GoalEditorAction.UpdateMetricValue(activeMetric, targetStr))
-        }
-
-        fun renderBulkChipButtons() {
-            binding.btnApplyWeekday.setBackgroundResource(
-                if (isWeekdayBulkApplied) R.drawable.bg_outline_chip_btn_active else R.drawable.bg_outline_chip_btn
-            )
-            binding.ivCheckWeekday.visibility = if (isWeekdayBulkApplied) View.VISIBLE else View.GONE
-
-            binding.btnApplyWeekend.setBackgroundResource(
-                if (isWeekendBulkApplied) R.drawable.bg_outline_chip_btn_active else R.drawable.bg_outline_chip_btn
-            )
-            binding.ivCheckWeekend.visibility = if (isWeekendBulkApplied) View.VISIBLE else View.GONE
-        }
-
-        fun updateSegmentStyle(selected: TextView, unselected: TextView) {
-            selected.setBackgroundResource(R.drawable.bg_segmented_thumb)
-            selected.elevation = 2f
-            selected.setTextColor(Color.parseColor("#5B3FD9"))
-            selected.setTypeface(null, Typeface.BOLD)
-
-            unselected.background = null
-            unselected.elevation = 0f
-            unselected.setTextColor(Color.parseColor("#5E5A6E"))
-            unselected.setTypeface(null, Typeface.NORMAL)
-        }
-
-        fun updateScopeUI() {
-            if (isCombinedScope) {
-                updateSegmentStyle(binding.tabScopeCombined, binding.tabScopeIndividual)
-                binding.individualAppSegment.visibility = View.GONE
-                binding.tvScopeDescription.text = "YouTube · Instagram · KakaoTalk의 사용량을 합산해요."
-                binding.tvScheduleCardTitle.text = "합산 목표 · 적용 일정"
-            } else {
-                updateSegmentStyle(binding.tabScopeIndividual, binding.tabScopeCombined)
-                binding.individualAppSegment.visibility = View.VISIBLE
-                binding.tvScopeDescription.text = "선택한 앱마다 개별 목표 한도를 설정해요."
-                binding.tvScheduleCardTitle.text = "${appNames[selectedAppIndex]} 목표 · 적용 일정"
-            }
-        }
-
-        fun updateScheduleUI() {
-            if (isWeeklyMode) {
-                updateSegmentStyle(binding.tabScheduleWeekly, binding.tabScheduleDaily)
-                binding.layoutDailyContainer.visibility = View.GONE
-                binding.layoutWeeklyContainer.visibility = View.VISIBLE
-            } else {
-                updateSegmentStyle(binding.tabScheduleDaily, binding.tabScheduleWeekly)
-                binding.layoutWeeklyContainer.visibility = View.GONE
-                binding.layoutDailyContainer.visibility = View.VISIBLE
-            }
-            syncCurrentTargetToViewModel()
-        }
-
-        binding.tabScopeCombined.setOnClickListener {
-            isCombinedScope = true
-            updateScopeUI()
-        }
-        binding.tabScopeIndividual.setOnClickListener {
-            isCombinedScope = false
-            updateScopeUI()
-        }
-
-        appTabs.forEachIndexed { idx, tab ->
-            tab.setOnClickListener {
-                selectedAppIndex = idx
-                appTabs.forEachIndexed { i, t ->
-                    if (i == idx) {
-                        t.setBackgroundResource(R.drawable.bg_segmented_thumb)
-                        t.setTextColor(Color.parseColor("#5B3FD9"))
-                        t.setTypeface(null, Typeface.BOLD)
-                    } else {
-                        t.background = null
-                        t.setTextColor(Color.parseColor("#5E5A6E"))
-                        t.setTypeface(null, Typeface.NORMAL)
-                    }
-                }
-                binding.tvScheduleCardTitle.text = "${appNames[idx]} 목표 · 적용 일정"
-            }
-        }
-
-        binding.tabScheduleDaily.setOnClickListener {
-            isWeeklyMode = false
-            updateScheduleUI()
-        }
-        binding.tabScheduleWeekly.setOnClickListener {
-            isWeeklyMode = true
-            updateScheduleUI()
-        }
-
-        // 평일 적용 버튼 (적용된 상태에서 한 번 더 누르면 해제)
-        binding.btnApplyWeekday.setOnClickListener {
-            if (isWeekdayBulkApplied) {
-                isWeekdayBulkApplied = false
-                for (i in 0..4) {
-                    dayRows[i].first.isChecked = false
-                }
-            } else {
-                val value = binding.etBulkTarget.text.toString().ifBlank { "30" }
-                for (i in 0..4) {
-                    dayRows[i].first.isChecked = true
-                    dayRows[i].second.setText(value)
-                }
-                isWeekdayBulkApplied = true
-            }
-            renderBulkChipButtons()
-            syncCurrentTargetToViewModel()
-        }
-
-        // 주말 적용 버튼 (적용된 상태에서 한 번 더 누르면 해제)
-        binding.btnApplyWeekend.setOnClickListener {
-            if (isWeekendBulkApplied) {
-                isWeekendBulkApplied = false
-                for (i in 5..6) {
-                    dayRows[i].first.isChecked = false
-                }
-            } else {
-                val value = binding.etBulkTarget.text.toString().ifBlank { "60" }
-                for (i in 5..6) {
-                    dayRows[i].first.isChecked = true
-                    dayRows[i].second.setText(value)
-                }
-                isWeekendBulkApplied = true
-            }
-            renderBulkChipButtons()
-            syncCurrentTargetToViewModel()
-        }
-
-        binding.etDailyTarget.doAfterTextChanged {
-            if (!isWeeklyMode) syncCurrentTargetToViewModel()
-        }
-        dayRows.forEachIndexed { idx, (cb, et, unit) ->
-            dayRowContainers[idx].setOnClickListener {
-                cb.toggle()
-            }
-            cb.setOnCheckedChangeListener { _, isChecked ->
-                et.isEnabled = isChecked
-                et.alpha = if (isChecked) 1.0f else 0.35f
-                unit.alpha = if (isChecked) 1.0f else 0.35f
-                if (idx in 0..4) {
-                    isWeekdayBulkApplied = (0..4).all { dayRows[it].first.isChecked }
-                } else {
-                    isWeekendBulkApplied = (5..6).all { dayRows[it].first.isChecked }
-                }
-                renderBulkChipButtons()
-                if (idx == todayIndex && isWeeklyMode) syncCurrentTargetToViewModel()
-            }
-            et.doAfterTextChanged {
-                if (idx == todayIndex && isWeeklyMode) syncCurrentTargetToViewModel()
-            }
-        }
-
-        binding.cbExcludeHolidays.setOnCheckedChangeListener { _, isChecked ->
-            binding.tvHolidayDescription.text = if (isChecked) {
-                "공휴일에는 목표를 적용하지 않고 쉬어가요."
-            } else {
-                "선택한 요일의 목표를 공휴일에도 적용해요."
-            }
-        }
-
-        binding.btnBack.setOnClickListener {
-            navigator.back()
-        }
-
-        // 초기 진입 시 체크 상태(체크됨) 및 목표값 동기화
-        renderBulkChipButtons()
-        syncCurrentTargetToViewModel()
     }
 }

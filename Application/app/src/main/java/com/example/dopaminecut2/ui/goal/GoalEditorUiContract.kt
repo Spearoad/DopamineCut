@@ -31,6 +31,7 @@ sealed interface GoalEditorAction {
     data class SelectMetric(val metric: GoalMetric) : GoalEditorAction
     data class UpdateValue(val value: String) : GoalEditorAction
     data class TogglePlatform(val platformId: String) : GoalEditorAction
+    data class SetPlatforms(val metric: GoalMetric, val platforms: Set<String>) : GoalEditorAction
     data class SelectIntervention(val intervention: GoalIntervention) : GoalEditorAction
     data class SetMetricEnabled(val metric: GoalMetric, val enabled: Boolean) : GoalEditorAction
     data class UpdateMetricValue(val metric: GoalMetric, val value: String) : GoalEditorAction
