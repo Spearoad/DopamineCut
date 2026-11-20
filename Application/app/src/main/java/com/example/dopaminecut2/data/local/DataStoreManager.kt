@@ -151,7 +151,7 @@ class DataStoreManager(private val context: Context) : OnboardingStore, UsageSna
             val onboardingKey = stringPreferencesKey("onboarding_$userId")
             val progress = decodeOnboarding(preferences[onboardingKey])
             preferences[onboardingKey] = encodeOnboarding(progress.copy(answers = progress.answers +
-                (OnboardingFlowPolicy.GOAL_MODE_KEY to setOf(OnboardingFlowPolicy.MANAGED_GOALS))))
+                    (OnboardingFlowPolicy.GOAL_MODE_KEY to setOf(OnboardingFlowPolicy.MANAGED_GOALS))))
             imported = true
         }
         return imported
@@ -172,7 +172,7 @@ class DataStoreManager(private val context: Context) : OnboardingStore, UsageSna
             val progress = decodeOnboarding(preferences[onboardingKey])
             // An explicitly saved managed goal replaces legacy limits, never enables signup defaults.
             preferences[onboardingKey] = encodeOnboarding(progress.copy(answers = progress.answers +
-                (OnboardingFlowPolicy.GOAL_MODE_KEY to setOf(OnboardingFlowPolicy.MANAGED_GOALS))))
+                    (OnboardingFlowPolicy.GOAL_MODE_KEY to setOf(OnboardingFlowPolicy.MANAGED_GOALS))))
         }
     }
 
@@ -252,7 +252,7 @@ class DataStoreManager(private val context: Context) : OnboardingStore, UsageSna
             val snapshots = decodeSnapshots(preferences[usageSnapshotsKey]).toMutableList()
             require(snapshots.none {
                 checkpoint.viewSessionId in it.shortformSessions &&
-                    (it.userId != checkpoint.userId || it.date != checkpoint.date)
+                        (it.userId != checkpoint.userId || it.date != checkpoint.date)
             }) { "다른 계정 또는 날짜의 시청 세션입니다." }
             val index = snapshots.indexOfFirst { it.userId == checkpoint.userId && it.date == checkpoint.date }
             val current = snapshots.getOrNull(index) ?: UsageSnapshot.empty(checkpoint.userId, checkpoint.date)
@@ -394,6 +394,8 @@ class DataStoreManager(private val context: Context) : OnboardingStore, UsageSna
                     put("app", usage.runTimeSec)
                     put("short", usage.shortformTimeSec)
                     put("count", usage.shortformCount)
+                    put("hourlyTime", JSONObject(usage.hourlyShortformTimeSec))
+                    put("hourlyCount", JSONObject(usage.hourlyShortformCount))
                 })
             }
         })
@@ -456,7 +458,13 @@ class DataStoreManager(private val context: Context) : OnboardingStore, UsageSna
         if (this == null) return emptyMap()
         return keys().asSequence().associateWith { key ->
             getJSONObject(key).let { value ->
-                AppUsage(value.optLong("app"), value.optLong("short"), value.optLong("count"))
+                AppUsage(
+                    runTimeSec = value.optLong("app"),
+                    shortformTimeSec = value.optLong("short"),
+                    shortformCount = value.optLong("count"),
+                    hourlyShortformTimeSec = value.optJSONObject("hourlyTime").toLongMap(),
+                    hourlyShortformCount = value.optJSONObject("hourlyCount").toLongMap()
+                )
             }
         }
     }
