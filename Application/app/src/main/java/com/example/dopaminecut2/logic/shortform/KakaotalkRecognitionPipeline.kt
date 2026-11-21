@@ -115,8 +115,10 @@ class KakaotalkRecognitionPipeline(
             return
         }
         if (inferenceRunning) return
+        val backoffShift = (executionFailures + unconfirmedResults - 1).coerceIn(0, 3)
         val interval = if (state.excluded || state.kind == ShortformContentKind.AD) 15_000L
-            else (1_000L shl (executionFailures + unconfirmedResults).coerceAtMost(3))
+        else if (executionFailures + unconfirmedResults == 0) 0L
+        else (350L shl backoffShift)
         if (lastAttempt?.let { now() - it < interval } == true) return
         startRequest(key)
     }
@@ -133,12 +135,15 @@ class KakaotalkRecognitionPipeline(
                     trace("SETTLE_START key=${key.take(12)} generation=${slot.token.generation}")
                     delay(settleMs)
                     trace("SETTLE_END key=${key.take(12)} generation=${slot.token.generation}")
-                    if (!accepts(slot.token) || request !== slot) return@withTimeout null
+                    if (!accepts(slot.token, "BEFORE_INFER") || request !== slot) return@withTimeout null
                     infer(slot.token)
                 }
-                if (!accepts(slot.token) || request !== slot) return@launch
+                if (!accepts(slot.token, "AFTER_INFER") || request !== slot) return@launch
                 when {
-                    prediction == null -> failed("INFERENCE_UNAVAILABLE")
+                    prediction == null -> {
+                        trace("INFERENCE_NULL key=${key.take(12)} generation=${slot.token.generation}")
+                        failed("INFERENCE_UNAVAILABLE")
+                    }
                     prediction.uiClass == KakaotalkUiClass.UNKNOWN -> {
                         unconfirmedResults++
                         publish(state.copy(kind = ShortformContentKind.UNKNOWN, excluded = false,
@@ -152,11 +157,11 @@ class KakaotalkRecognitionPipeline(
                     }
                 }
             } catch (timeout: TimeoutCancellationException) {
-                if (accepts(slot.token) && request === slot) failed("REQUEST_TIMEOUT")
+                if (accepts(slot.token, "ON_TIMEOUT") && request === slot) failed("REQUEST_TIMEOUT")
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                if (accepts(slot.token) && request === slot) {
+                if (accepts(slot.token, "ON_ERROR") && request === slot) {
                     failed("INFERENCE_FAILED")
                     onFailure(error)
                 }
@@ -168,9 +173,27 @@ class KakaotalkRecognitionPipeline(
         slot.job?.start()
     }
 
-    fun accepts(token: KakaotalkFrameToken): Boolean = token.owner == owner() &&
-        token.owner == currentOwner && token.generation == generation && token.contentKey == state.contentKey &&
-        state.screen == ShortformScreenState.INSIDE && !state.paused
+    fun accepts(token: KakaotalkFrameToken): Boolean = accepts(token, "EXTERNAL")
+
+    private fun accepts(token: KakaotalkFrameToken, site: String): Boolean {
+        val activeOwner = owner()
+        val ownerMatchesActive = activeOwner != null && token.owner == activeOwner
+        val ownerMatchesCurrent = token.owner == currentOwner
+        val generationMatches = token.generation == generation
+        val keyMatches = token.contentKey == state.contentKey
+        val insideScreen = state.screen == ShortformScreenState.INSIDE
+        val notPaused = !state.paused
+        val ok = ownerMatchesActive && ownerMatchesCurrent && generationMatches && keyMatches && insideScreen && notPaused
+        if (!ok) {
+            trace(
+                "REJECT_TOKEN site=$site key=${token.contentKey.take(12)} " +
+                        "tokenGen=${token.generation} stateGen=$generation " +
+                        "ownerActive=$ownerMatchesActive ownerCurrent=$ownerMatchesCurrent " +
+                        "keyMatch=$keyMatches screen=${state.screen} paused=${state.paused}"
+            )
+        }
+        return ok
+    }
 
     private fun failed(reason: String) {
         executionFailures++
