@@ -877,12 +877,23 @@ class AppBlockService : AccessibilityService() {
         if (!instagramPipeline.accepts(token)) return null
         val captureEpoch = snapshots.cached()?.epoch ?: return null
         val capturedAt = monotonicClock.nowMillis()
-        val bitmap = takeScreenshotBitmap() ?: return null
+        val bitmap = withTimeoutOrNull(INSTAGRAM_CAPTURE_TIMEOUT_MS) { takeScreenshotBitmap() } ?: return null
         return try {
-            val prediction = model.classify(bitmap).getOrThrow()
+            if (!instagramPipeline.accepts(token)) return null
+            val started = monotonicClock.nowMillis()
+            val prediction = withTimeoutOrNull(INSTAGRAM_INFERENCE_TIMEOUT_MS) {
+                model.classify(bitmap).getOrThrow()
+            } ?: return null
             if (!awaitForegroundSnapshot(notBeforeMs = capturedAt)) return null
             if (snapshots.cached()?.epoch != captureEpoch) return null
-            prediction.takeIf { instagramPipeline.accepts(token) }
+            if (!instagramPipeline.accepts(token)) return null
+            if (BuildConfig.DEBUG) Log.d(
+                TAG,
+                "Instagram 콘텐츠 판정: uiClass=${prediction.uiClass}, " +
+                        "verdict=${prediction.contentKind} (conf=${"%.3f".format(prediction.confidence)}, " +
+                        "latencyMs=${monotonicClock.nowMillis() - started}, key=${token.contentKey.take(12)})"
+            )
+            prediction
         } finally { bitmap.recycle() }
     }
 
@@ -1777,6 +1788,8 @@ class AppBlockService : AccessibilityService() {
         const val SCREEN_REFRESH_INTERVAL_MS = 150L
         const val CONTENT_RECHECK_INTERVAL_MS = 1_000L
         const val CONTENT_SETTLE_MS = 150L
+        const val INSTAGRAM_CAPTURE_TIMEOUT_MS = 2_000L
+        const val INSTAGRAM_INFERENCE_TIMEOUT_MS = 2_000L
         const val KAKAOTALK_CAPTURE_TIMEOUT_MS = 2_000L
         const val KAKAOTALK_INFERENCE_TIMEOUT_MS = 2_000L
         const val CONTENT_OCR_INTERVAL_MS = ContentSamplingPolicy.INTERVAL_MS

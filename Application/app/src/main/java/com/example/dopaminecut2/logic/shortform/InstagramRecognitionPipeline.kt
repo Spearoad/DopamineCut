@@ -84,10 +84,13 @@ class InstagramRecognitionPipeline(
                 )
             )
         } else {
+            val shouldPause = state.excluded ||
+                    state.kind == ShortformContentKind.AD ||
+                    (state.kind == ShortformContentKind.UNKNOWN && failures > 0)
             publish(
                 state.copy(
                     screen = ShortformScreenState.INSIDE,
-                    paused = state.excluded || state.kind == ShortformContentKind.AD,
+                    paused = shouldPause,
                     reason = decision.reason
                 )
             )
@@ -132,6 +135,11 @@ class InstagramRecognitionPipeline(
         val interval = if (knownNonReel || failures >= 3) 15_000L else 1_000L shl failures.coerceAtMost(2)
         if (lastAttempt?.let { timestamp - it < interval } == true) return
         val token = InstagramFrameToken(currentOwner ?: return, key, generation)
+        if (knownNonReel) {
+            // 15초 백오프 만료 후 재검증 진입 시 2프레임 연속 판정이 1초 간격으로 이어지도록 초기화
+            knownNonReel = false
+            confirmation.reset()
+        }
         lastAttempt = timestamp
         job = scope.launch {
             try {
@@ -155,8 +163,8 @@ class InstagramRecognitionPipeline(
                     publish(
                         state.copy(
                             kind = ShortformContentKind.UNKNOWN,
-                            paused = false,
-                            excluded = false,
+                            paused = state.excluded || failures > 0,
+                            excluded = state.excluded,
                             reason = prediction?.uiClass?.name ?: "INFERENCE_UNAVAILABLE"
                         )
                     )
