@@ -2,7 +2,7 @@
 
 ## 1. 개요 및 최종 요약
 - **담당 역할**: 인스타그램 5-클래스 화면 데이터셋 구축(730장), `WholeUiTiles` 전처리 검증, MobileNetV3-Small 모델 튜닝·ONNX 변환 및 1단계 접근성 추적(`InstagramManager`)과 2단계 온디바이스 CV 파이프라인(`InstagramRecognitionPipeline`)·임시 세션(`AppBlockService`) 최종 통합
-- **모델 파일**: `app/src/main/assets/models/instagram_shortform_state.onnx` (메타데이터: `instagram_shortform_state.json`)
+- **모델 파일**: `Application/app/src/main/assets/models/instagram_shortform_state.onnx` (5.82 MB / 메타데이터: `instagram_shortform_state.json`)
 - **최종 검증 성능 (Validation 146장)**:
   - **Validation Accuracy**: **97.95%** (143 / 146)
   - **Validation Macro F1-Score**: **97.16%**
@@ -27,19 +27,19 @@
 
 ## 3. 모델 학습 하이퍼파라미터 및 전처리 (`WholeUiTiles`)
 
-모바일 온디바이스 환경(안드로이드 CPU 스레드 2개 기준)에서의 추론 속도와 분류 정확도를 동시에 확보하기 위해, YouTube·KakaoTalk과 동일한 `WholeUiTiles`(320×320: 좌측 전체 화면 + 우측 하단 UI 띠 2분할) 전처리와 아래 하이퍼파라미터를 적용하여 파인튜닝을 수행했습니다.
+모바일 온디바이스 환경(안드로이드 CPU 스레드 2개 기준)에서의 추론 속도와 분류 정확도를 동시에 확보하기 위해, YouTube·KakaoTalk과 동일한 `WholeUiTiles`(320×320: 좌측 전체 화면 + 우측 중단·하단 UI 2분할) 전처리와 아래 하이퍼파라미터를 적용하여 파인튜닝을 수행했습니다.
 
 | 구분 | 설정 항목 | 적용 값 / 방식 | 적용 이유 및 비고 |
 | :---: | :--- | :--- | :--- |
-| **Backbone** | Base Architecture | `MobileNetV3-Small` (ImageNet-1K Pretrained) | 모바일 CPU 저전력·고속 추론에 최적화된 경량 백본 |
+| **Backbone** | Base Architecture | `MobileNetV3-Small` (ImageNet-1K Pretrained, `Dropout = 0.3`) | 모바일 CPU 저전력·고속 추론에 최적화된 경량 백본 및 과적합 방지 |
 | **Input** | 입력 텐서 규격 | `1 × 3 × 320 × 320` (`NCHW`, `RGB`) | `WholeUiTiles` 3분할 UI 타일 합성 + ImageNet 정규화 |
 | **Dataset** | 데이터 분할 (Split) | 총 **730장** (Train **584장** / Val **146장**) | `8 : 2` Stratified Split (클래스 비율 유지, `seed=42`) |
-| **Training** | Epochs / Batch Size | `Epochs = 25` / `Batch Size = 32` | 최고 검증 Macro F1-Score 달성 시점의 가중치(Best Checkpoint) 저장 |
+| **Training** | Epochs / Batch Size | `Epochs = 20` / `Batch Size = 16` | 최고 검증 Macro F1-Score 달성 시점(15 Epoch) 가중치(Best Checkpoint) 저장 |
 | **Optimizer** | 최적화 알고리즘 | `AdamW` (`lr = 5e-4`, `weight_decay = 1e-2`) | 가중치 감쇠를 통해 소규모 데이터셋 과적합(Overfitting) 억제 |
-| **Scheduler** | 학습률 스케줄러 | `CosineAnnealingLR` (`T_max = 25`, `eta_min = 1e-6`) | 학습 후반부 미세 수렴 유도 및 검증 성능 안정화 |
+| **Scheduler** | 학습률 스케줄러 | `CosineAnnealingLR` (`T_max = 20`, `eta_min = 1e-5`) | 학습 후반부 미세 수렴 유도 및 검증 성능 안정화 |
 | **Loss** | 손실 함수 | `CrossEntropyLoss` (Class Weights + `label_smoothing = 0.05`) | 클래스별 샘플 수 불균형 보정 및 모델 과신(Overconfidence) 방지 |
-| **Augmentation** | 데이터 증강 | `ColorJitter` (`brightness=0.15`, `contrast=0.15`, `saturation=0.1`) | UI 타일 위치 좌표가 깨지는 좌우 반전/크롭은 배제하고 다크모드·화면 밝기 변화에만 강건하도록 색상 증강 적용 |
-| **Export** | 배포 포맷 | `ONNX` (`opset_version = 17`) | 안드로이드 `onnxruntime-android` 완벽 호환 및 SHA-256 무결성 검증 연동 |
+| **Augmentation** | 데이터 증강 | `ColorJitter` (`brightness=0.25`, `contrast=0.25`, `saturation=0.20`, `hue=0.05`) + `RandomAffine` (`degrees=0`, `translate=(0.015, 0.015)`) | UI 타일 위치 좌표가 깨지는 좌우 반전/크롭은 배제하고 다크모드·화면 밝기 변화 및 미세 위치 흔들림(1.5%)에만 강건하도록 증강 적용 |
+| **Export** | 배포 포맷 | `ONNX` (`opset_version = 17`, `5.82 MB`) | 안드로이드 `onnxruntime-android` 호환, PyTorch 대비 최대 오차 `0.00002766` 및 SHA-256 무결성 검증 연동 |
 
 ### 전처리(`WholeUiTiles`) 적용 샘플
 ![WholeUiTiles 전처리 샘플](./Picture/whole_ui_tiles_samples.png)
@@ -49,8 +49,8 @@
 ## 4. 학습 안정화 및 검증 성능 평가 (Validation 146장)
 
 ### 4-1. Baseline vs Tuned 학습 곡선 비교
-- **Baseline 모델**: 초기 학습에서 Validation Loss가 최대 `1.95`까지 급등하며 불안정한 수렴 양상을 보였습니다.
-- **Tuned 모델**: `AdamW(weight_decay=1e-2)`, `CosineAnnealingLR`, `label_smoothing=0.05`, `ColorJitter`를 적용한 결과 Validation Loss가 `0.43` 부근에서 안정적으로 수렴하며 최종 **Accuracy 97.95% / Macro F1 97.16%**를 달성했습니다.
+- **Baseline 모델**: `Adam(lr=1e-3)`, `Batch Size = 32`, `Dropout = 0.2`, 증강·가중치 미적용으로 12 Epoch 학습 시 초기 Validation Loss가 최대 `1.95`(Epoch 6: `1.9489`)까지 급등하며 불안정한 수렴 양상을 보였습니다.
+- **Tuned 모델**: `Batch Size = 16`, `Dropout = 0.3`, `AdamW(lr=5e-4, weight_decay=1e-2)`, `CosineAnnealingLR(T_max=20, eta_min=1e-5)`, `Class Weights + label_smoothing=0.05`, `ColorJitter + RandomAffine`을 적용한 결과 Validation Loss가 label_smoothing(0.05) 하한 특성상 0.43(Best Epoch 15: 0.4320) 부근에서 급등 없이 안정적으로 수렴하며 최종 **Accuracy 97.95% / Macro F1 97.16%**를 달성했습니다.
 
 | Baseline 학습 곡선 | Tuned 학습 곡선 및 혼동행렬 |
 | :---: | :---: |
@@ -93,10 +93,10 @@ flowchart LR
 ```
 
 ### 핵심 구현 포인트
-1. **2프레임 연속 검증 (`ContentKindConfirmation`)**: `InstagramRecognitionPipeline`에서 단일 프레임 오탐을 막기 위해 2프레임 연속 동일 판정 시에만 `NORMAL` / `AD` / `excluded(비릴스)`를 확정합니다.
+1. **2프레임 연속 검증 (`ContentKindConfirmation`)**: `InstagramRecognitionPipeline`에서 단일 프레임 오탐을 막기 위해 2프레임 연속 동일 판정 시에만 `NORMAL` / `AD` / `excluded`(비릴스)를 확정합니다.
 2. **임시 세션 연동 (`beginProvisional` / `resolveProvisional`)**: `AppBlockService.applyInstagramState`에서 CV 2프레임 판정 대기 중(`UNKNOWN`) 진입 시각을 임시 세션으로 보존하다가, 일반 릴스 확정 시 시청 시간 손실 없이 정식 세션으로 승격하고, 광고·안전 구역 확정 시 즉시 폐기합니다.
 3. **댓글·공유창 복귀 보존**: 댓글·공유창이 열리면(`OVERLAY`) 진행 중인 CV·OCR 작업과 시청 시간 누적만 일시 정지하고 기존 식별자·세션·누적 OCR 텍스트를 유지하여, 같은 릴스로 복귀 시 중복 집계 없이 이어서 처리합니다.
-4. **불필요한 화면 캡처 최소화 (발열·배터리 대응)**: 상시 1초 간격 캡처가 아니라 **새 릴스 진입 직후 2프레임 확정 시점에만 최소 캡처**를 수행하고, 확정 후에는 `ContentTrackingCommand.Wait`로 캡처를 중단하며, 비릴스·오류 시 최대 15초 백오프를 적용했습니다.
+4. **불필요한 화면 캡처 최소화 (발열·배터리 대응)**: 상시 1초 간격 캡처가 아니라 **새 릴스 진입 직후 2프레임 확정 시점에만 최소 캡처**를 수행하고, 확정 후에는 `ContentTrackingCommand.Wait`로 캡처를 중단하며, 캡처·추론 단계별 2초 타임아웃 방어와 비릴스·오류 시 최대 15초 백오프를 적용했습니다.
 5. **기타 콘텐츠(사진 게시물·라이브) 호환**: `countsWatchTime()` 정책을 유지하여 사진 게시물(`PHOTO_POST`)은 숏폼 시청 시간만 반영하고 영상 수에는 포함하지 않습니다.
 6. **온디바이스 로컬 처리 (개인정보 보호)**: 화면 캡처 이미지(`Bitmap`)는 외부 서버(Firebase 등)로 전송하거나 디스크에 저장하지 않고, 기기 내부 `onnxruntime-android`로 즉시 분류한 뒤 메모리에서 즉시 해제(`bitmap.recycle()`)합니다.
 
