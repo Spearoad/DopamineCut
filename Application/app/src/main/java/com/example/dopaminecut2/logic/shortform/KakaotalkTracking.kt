@@ -3,11 +3,14 @@ package com.example.dopaminecut2.logic.shortform
 import com.example.dopaminecut2.logic.manager.ScreenSnapshot
 import java.util.Locale
 
-/** KakaoTalk signals are text based until target-device accessibility IDs are recorded. */
+/** KakaoTalk entry signals are text based; overlay sheets use accessibility IDs recorded on a device. */
 class KakaotalkEntryDetector {
     private val markers = listOf("숏폼", "shorts", "shortform", "쇼츠")
     private val actions = listOf("좋아요", "like", "댓글", "comment", "공유", "share", "리믹스", "remix", "팔로우", "follow")
     private val overlayIds = setOf(
+        // 실기기(SM-S916N, Android 16, 2026-11-21) 숏폼 댓글창·공유창 모두 Material BottomSheet로 열리며
+        // 이 ID가 접근성 트리에 나타난다. 일반 시청·채팅 목록 화면에는 없다.
+        "design_bottom_sheet",
         "comment_sheet", "comment_bottom_sheet", "share_sheet", "share_bottom_sheet",
         "comments_container", "bottom_sheet_container", "bottom_sheet_container_view"
     )
@@ -67,17 +70,20 @@ class KakaotalkTrackingCoordinator(
         lastNowMs = nowMs
         val detection = detector.detect(snapshot)
 
+        // 시트가 영상을 가린 동안의 글자는 영상이 아니라 시트 내용이다. 공유창의 채팅방 미리보기
+        // (채널 메시지의 "(광고)" 등)나 댓글 내용 때문에 영상 세션을 광고로 끝내지 않는다.
+        if (detection.state == ShortformScreenState.OVERLAY && activeKey != null) {
+            pendingKey = null
+            lastReliableMs = nowMs
+            return KakaotalkTrackingDecision(true, true, activeKey, reason = "PLAYER_OVERLAY")
+        }
+
         if (explicitAd) {
             reset()
             return KakaotalkTrackingDecision(false, true, null, reason = "EXPLICIT_AD")
         }
 
         val currentKey = contentKey?.trim()?.takeIf(String::isNotEmpty)
-        if (detection.state == ShortformScreenState.OVERLAY && activeKey != null) {
-            pendingKey = null
-            lastReliableMs = nowMs
-            return KakaotalkTrackingDecision(true, true, activeKey, reason = "PLAYER_OVERLAY")
-        }
 
         if (detection.state != ShortformScreenState.INSIDE || currentKey == null) {
             pendingKey = null

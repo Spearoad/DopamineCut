@@ -123,12 +123,13 @@ class KakaotalkRecognitionScenarioTest {
         val requestsBefore = h.inferenceRequests.size
         val resetsBefore = h.ocrBufferResets
 
-        h.show(sheet("댓글", "댓글 달기"), 10_000L)
+        h.show(sheet("숏폼", "댓글", "좋아요", "댓글 달기"), 10_000L)
         assertEquals("창이 열린 동안 CV 새 작업 없음", requestsBefore, h.inferenceRequests.size)
         assertEquals("세션 유지", session, h.activeSession)
 
         h.show(video("고양이 영상"), 4_000L)
-        h.show(sheet("공유", "링크 복사"), 10_000L)
+        // 공유창의 채팅방 목록에는 채널 메시지 미리보기 "(광고)"가 보일 수 있다(실기기에서 EXPLICIT_AD로 오판된 경우).
+        h.show(sheet("공유", "채팅방 검색", "(광고) 이번 주 특가"), 10_000L)
         h.show(video("고양이 영상"), 4_000L)
         assertEquals("복귀 후 같은 세션으로 이어짐", session, h.activeSession)
         assertEquals("복귀 후 재판정 없음", requestsBefore, h.inferenceRequests.size)
@@ -229,16 +230,22 @@ class KakaotalkRecognitionScenarioTest {
 
     private fun video(vararg text: String) = ScreenSnapshot(listOf("숏폼", "좋아요", *text), emptyList())
 
-    /** 영상 위에 열린 댓글·공유창. 카카오톡 실제 구조는 실기기에서 확인해야 한다. */
+    /**
+     * 영상 위에 열린 댓글·공유창. 실기기(SM-S916N, Android 16) 접근성 로그의 구조를 그대로 옮겼다.
+     * 댓글창 트리에는 "숏폼"·"좋아요" 같은 글자도 함께 보여, 글자만으로는 시청 화면과 구분되지 않는다.
+     */
     private fun sheet(vararg text: String) = ScreenSnapshot(
         texts = text.toList(),
         viewIds = emptyList(),
         elements = listOf(
-            ScreenElement(
-                text = null, contentDescription = null, viewId = null,
-                className = "android.widget.BottomSheet",
-                bounds = NormalizedBounds(0f, .5f, 1f, 1f), isSelected = false
-            )
+            element("com.kakao.talk:id/coordinator", "android.view.ViewGroup", 0f, .04f, 1f, 1f),
+            element("com.kakao.talk:id/touch_outside", "android.view.View", 0f, .04f, 1f, 1f),
+            element("com.kakao.talk:id/design_bottom_sheet", "android.widget.FrameLayout", 0f, .33f, 1f, 1f),
+            element("com.kakao.talk:id/handle", "android.view.View", .455f, .339f, .543f, .344f)
         )
     )
+
+    private fun element(id: String, className: String, l: Float, t: Float, r: Float, b: Float) =
+        ScreenElement(text = null, contentDescription = null, viewId = id, className = className,
+            bounds = NormalizedBounds(l, t, r, b), isSelected = false)
 }
