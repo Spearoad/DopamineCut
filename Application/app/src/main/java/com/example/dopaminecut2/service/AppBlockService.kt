@@ -317,6 +317,7 @@ class AppBlockService : AccessibilityService() {
             monotonicClock::nowMillis,
             owner = { sessionManager.active()?.takeIf { sessionReady && measurementEnabled &&
                     dependencies.authRepository.currentUserId() == it.userId &&
+                    dependencies.dateIdProvider.currentDateId() == it.date &&
                     currentAppManager?.platform == SupportedPlatform.INSTAGRAM } },
             infer = ::captureInstagramPrediction, emit = ::applyInstagramState,
             onFailure = { reportFailureOnMain("Instagram 콘텐츠 확인", it) })

@@ -37,6 +37,7 @@ class InstagramRecognitionPipeline(
     private var generation = 0L
     private var lastAttempt: Long? = null
     private var failures = 0
+    private var captureSkips = 0
     private var knownNonReel = false
 
     fun observe(snapshot: ScreenSnapshot) {
@@ -70,6 +71,7 @@ class InstagramRecognitionPipeline(
         if (state.contentKey != key) {
             invalidate()
             failures = 0
+            captureSkips = 0
             lastAttempt = null
             knownNonReel = false
             publish(
@@ -86,7 +88,7 @@ class InstagramRecognitionPipeline(
         } else {
             val shouldPause = state.excluded ||
                     state.kind == ShortformContentKind.AD ||
-                    (state.kind == ShortformContentKind.UNKNOWN && failures > 0)
+                    (state.kind == ShortformContentKind.UNKNOWN && (failures > 0 || captureSkips >= 2))
             publish(
                 state.copy(
                     screen = ShortformScreenState.INSIDE,
@@ -129,14 +131,21 @@ class InstagramRecognitionPipeline(
         else -> false
     }
 
+    private fun retryIntervalMs(): Long = when {
+        knownNonReel || failures >= 3 || captureSkips >= 4 -> 15_000L
+        failures > 0 -> 1_000L shl (failures - 1).coerceAtMost(2)
+        captureSkips > 0 -> 400L shl (captureSkips - 1).coerceAtMost(2)
+        else -> 850L
+    }
+
     private fun requestInference(key: String) {
         val timestamp = now()
         // Known non-reel results expire as well: a single false negative cannot suppress a key forever.
-        val interval = if (knownNonReel || failures >= 3) 15_000L else 1_000L shl failures.coerceAtMost(2)
+        val interval = retryIntervalMs()
         if (lastAttempt?.let { timestamp - it < interval } == true) return
         val token = InstagramFrameToken(currentOwner ?: return, key, generation)
         if (knownNonReel) {
-            // 15초 백오프 만료 후 재검증 진입 시 2프레임 연속 판정이 1초 간격으로 이어지도록 초기화
+            // 15초 백오프 만료 후 재검증 진입 시 2프레임 연속 판정이 이어지도록 초기화
             knownNonReel = false
             confirmation.reset()
         }
@@ -148,24 +157,36 @@ class InstagramRecognitionPipeline(
                 val prediction = infer(token)
                 if (!accepts(token)) return@launch
 
-                val isNonReel = prediction?.uiClass?.isSafeNonReelScreen == true
-                val rawKind = when {
-                    prediction == null -> ShortformContentKind.UNKNOWN
-                    isNonReel -> ShortformContentKind.AD
-                    else -> prediction.contentKind
+                if (prediction == null) {
+                    // 1회 캡처 충돌/스킵 시 기존 1차 관측과 임시 세션을 보존하고 400ms 뒤 빠르게 재시도
+                    captureSkips++
+                    if (captureSkips >= 2) confirmation.reset()
+                    publish(
+                        state.copy(
+                            kind = ShortformContentKind.UNKNOWN,
+                            paused = state.excluded || failures > 0 || captureSkips >= 2,
+                            excluded = state.excluded,
+                            reason = "INFERENCE_UNAVAILABLE"
+                        )
+                    )
+                    return@launch
                 }
+
+                captureSkips = 0
+                val isNonReel = prediction.uiClass?.isSafeNonReelScreen == true
+                val rawKind = if (isNonReel) ShortformContentKind.AD else prediction.contentKind
 
                 // 2프레임 연속 검증
                 val confirmedKind = confirmation.observe(rawKind, now())
                 if (confirmedKind == ShortformContentKind.UNKNOWN) {
-                    // 추론 실패(UNKNOWN)일 때만 백오프 증가, 1차 관측 완료 후 2차 대기는 1초 뒤 바로 재시도
+                    // 모델 불확실(UNKNOWN)일 때만 실패 백오프 증가, 1차 정상 관측 후 2차 대기는 850ms 뒤 재시도
                     failures = if (rawKind == ShortformContentKind.UNKNOWN) failures + 1 else 0
                     publish(
                         state.copy(
                             kind = ShortformContentKind.UNKNOWN,
                             paused = state.excluded || failures > 0,
                             excluded = state.excluded,
-                            reason = prediction?.uiClass?.name ?: "INFERENCE_UNAVAILABLE"
+                            reason = prediction.uiClass?.name ?: "INFERENCE_UNAVAILABLE"
                         )
                     )
                     return@launch
@@ -179,7 +200,7 @@ class InstagramRecognitionPipeline(
                             kind = ShortformContentKind.UNKNOWN,
                             paused = true,
                             excluded = true,
-                            reason = prediction?.uiClass?.name ?: "NON_REEL_CONFIRMED"
+                            reason = prediction.uiClass?.name ?: "NON_REEL_CONFIRMED"
                         )
                     )
                 } else {
@@ -190,7 +211,7 @@ class InstagramRecognitionPipeline(
                             kind = confirmedKind,
                             paused = !countsWatchTime(confirmedKind),
                             excluded = isAd,
-                            reason = prediction?.uiClass?.name ?: confirmedKind.name
+                            reason = prediction.uiClass?.name ?: confirmedKind.name
                         )
                     )
                 }
@@ -221,6 +242,7 @@ class InstagramRecognitionPipeline(
         generation++
         job?.cancel()
         job = null
+        captureSkips = 0
         confirmation.reset()
     }
 
@@ -236,6 +258,7 @@ class InstagramRecognitionPipeline(
         knownNonReel = false
         lastAttempt = null
         failures = 0
+        captureSkips = 0
         publish(InstagramRecognitionState(generation = generation))
     }
 }
