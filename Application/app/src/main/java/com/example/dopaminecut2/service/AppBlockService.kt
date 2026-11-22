@@ -256,6 +256,8 @@ class AppBlockService : AccessibilityService() {
 
         instagramContentClassifier = runCatching {
             InstagramOnDeviceContentClassifier(applicationContext)
+        }.onSuccess {
+            Log.i(TAG, "✅ Instagram CV 모델 메모리 로드 및 무결성 검증 성공!")
         }.onFailure { error ->
             Log.e(TAG, "Instagram CV 모델 초기화 실패: 콘텐츠를 UNKNOWN으로 유지합니다.", error)
         }.getOrNull()
@@ -320,7 +322,8 @@ class AppBlockService : AccessibilityService() {
                     dependencies.dateIdProvider.currentDateId() == it.date &&
                     currentAppManager?.platform == SupportedPlatform.INSTAGRAM } },
             infer = ::captureInstagramPrediction, emit = ::applyInstagramState,
-            onFailure = { reportFailureOnMain("Instagram 콘텐츠 확인", it) })
+            onFailure = { reportFailureOnMain("Instagram 콘텐츠 확인", it) },
+            cvAvailable = { instagramContentClassifier != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R })
         kakaotalkPipeline = KakaotalkRecognitionPipeline(serviceScope,
             appManagers.getValue(SupportedPlatform.KAKAOTALK.packageName) as KakaotalkManager,
             monotonicClock::nowMillis,
@@ -630,15 +633,21 @@ class AppBlockService : AccessibilityService() {
             }
             state.paused -> viewTracker.setPaused(true)
             state.kind == ShortformContentKind.UNKNOWN -> {
-                viewTracker.beginProvisional(SupportedPlatform.INSTAGRAM, state.contentKey)
-                viewTracker.setPaused(false)
+                if (!goalPresenter.isShowing) {
+                    viewTracker.beginProvisional(SupportedPlatform.INSTAGRAM, state.contentKey)
+                }
+                viewTracker.setPaused(goalPresenter.isShowing)
             }
             else -> {
                 val provisionalId = viewTracker.activeViewSessionId()?.takeIf { viewTracker.isProvisional() }
                 val promoted = provisionalId != null &&
                         viewTracker.resolveProvisional(provisionalId, state.kind, state.contentKey)
-                if (!promoted) viewTracker.onScreenChanged(true, SupportedPlatform.INSTAGRAM,
-                    state.contentKey, state.kind)
+                if (!promoted && !goalPresenter.isShowing) viewTracker.onScreenChanged(
+                    true,
+                    SupportedPlatform.INSTAGRAM,
+                    state.contentKey,
+                    state.kind
+                )
                 // Promotion may synchronously show an intervention and pause this session.
                 viewTracker.setPaused(goalPresenter.isShowing)
             }

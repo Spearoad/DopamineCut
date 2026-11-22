@@ -27,11 +27,14 @@ class InstagramRecognitionPipeline(
     private val infer: suspend (InstagramFrameToken) -> InstagramContentPrediction?,
     private val emit: (InstagramRecognitionState) -> Unit,
     private val onFailure: (Throwable) -> Unit = {},
-    private val settleMs: Long = 150
+    private val settleMs: Long = 150,
+    private val cvAvailable: () -> Boolean = { true }
 ) {
     var state = InstagramRecognitionState()
         private set
     private val confirmation = ContentKindConfirmation()
+    private var nonReelStreak = 0
+    private var lastNonReelObservedAt: Long? = null
     private var currentOwner: ServiceSession? = null
     private var job: Job? = null
     private var generation = 0L
@@ -67,6 +70,7 @@ class InstagramRecognitionPipeline(
             return
         }
         val key = decision.contentKey ?: return
+        val cvReady = cvAvailable()
 
         if (state.contentKey != key) {
             invalidate()
@@ -79,21 +83,21 @@ class InstagramRecognitionPipeline(
                     screen = ShortformScreenState.INSIDE,
                     contentKey = key,
                     kind = ShortformContentKind.UNKNOWN,
-                    paused = false, // 임시 세션(Provisional)이 대기 시간을 기록할 수 있도록 false
+                    paused = !cvReady, // CV가 가능할 때만 임시 세션 대기 시간 기록
                     generation = generation,
-                    reason = "AWAITING_CV",
+                    reason = if (cvReady) "AWAITING_CV" else "CV_UNAVAILABLE",
                     excluded = false
                 )
             )
         } else {
             val shouldPause = state.excluded ||
                     state.kind == ShortformContentKind.AD ||
-                    (state.kind == ShortformContentKind.UNKNOWN && (failures > 0 || captureSkips >= 2))
+                    (state.kind == ShortformContentKind.UNKNOWN && (!cvReady || failures > 0 || captureSkips >= 2))
             publish(
                 state.copy(
                     screen = ShortformScreenState.INSIDE,
                     paused = shouldPause,
-                    reason = decision.reason
+                    reason = if (!cvReady && state.kind == ShortformContentKind.UNKNOWN) "CV_UNAVAILABLE" else decision.reason
                 )
             )
         }
@@ -104,7 +108,7 @@ class InstagramRecognitionPipeline(
             ContentTrackingContext(key, state.contentKey, state.kind, job?.isActive == true, nonReelFresh)
         )) {
             ContentTrackingCommand.RetryClassification,
-            is ContentTrackingCommand.BeginClassification -> requestInference(key)
+            is ContentTrackingCommand.BeginClassification -> if (cvReady) requestInference(key)
 
             is ContentTrackingCommand.Track -> {
                 if (command.cancelInference && job?.isActive == true) invalidate()
@@ -147,7 +151,7 @@ class InstagramRecognitionPipeline(
         if (knownNonReel) {
             // 15초 백오프 만료 후 재검증 진입 시 2프레임 연속 판정이 이어지도록 초기화
             knownNonReel = false
-            confirmation.reset()
+            resetConfirmation()
         }
         lastAttempt = timestamp
         job = scope.launch {
@@ -160,7 +164,7 @@ class InstagramRecognitionPipeline(
                 if (prediction == null) {
                     // 1회 캡처 충돌/스킵 시 기존 1차 관측과 임시 세션을 보존하고 400ms 뒤 빠르게 재시도
                     captureSkips++
-                    if (captureSkips >= 2) confirmation.reset()
+                    if (captureSkips >= 2) resetConfirmation()
                     publish(
                         state.copy(
                             kind = ShortformContentKind.UNKNOWN,
@@ -174,9 +178,47 @@ class InstagramRecognitionPipeline(
 
                 captureSkips = 0
                 val isNonReel = prediction.uiClass?.isSafeNonReelScreen == true
-                val rawKind = if (isNonReel) ShortformContentKind.AD else prediction.contentKind
+                if (isNonReel) {
+                    // 비릴스 안전 구역은 광고(AD)와 교차 합의되지 않도록 별도 2프레임 카운터로 검증
+                    confirmation.reset()
+                    val observedAt = now()
+                    nonReelStreak = if (lastNonReelObservedAt?.let { observedAt - it <= NON_REEL_CONFIRM_WINDOW_MS } == true) {
+                        nonReelStreak + 1
+                    } else {
+                        1
+                    }
+                    lastNonReelObservedAt = observedAt
+                    failures = 0
+                    if (nonReelStreak < 2) {
+                        publish(
+                            state.copy(
+                                kind = ShortformContentKind.UNKNOWN,
+                                paused = state.excluded,
+                                excluded = state.excluded,
+                                reason = prediction.uiClass?.name ?: "NON_REEL_OBSERVED"
+                            )
+                        )
+                        return@launch
+                    }
+                    nonReelStreak = 0
+                    lastNonReelObservedAt = null
+                    knownNonReel = true
+                    publish(
+                        state.copy(
+                            kind = ShortformContentKind.UNKNOWN,
+                            paused = true,
+                            excluded = true,
+                            reason = prediction.uiClass?.name ?: "NON_REEL_CONFIRMED"
+                        )
+                    )
+                    return@launch
+                }
 
-                // 2프레임 연속 검증
+                nonReelStreak = 0
+                lastNonReelObservedAt = null
+                val rawKind = prediction.contentKind
+
+                // 2프레임 연속 검증 (일반 릴스 / 광고)
                 val confirmedKind = confirmation.observe(rawKind, now())
                 if (confirmedKind == ShortformContentKind.UNKNOWN) {
                     // 모델 불확실(UNKNOWN)일 때만 실패 백오프 증가, 1차 정상 관측 후 2차 대기는 850ms 뒤 재시도
@@ -193,34 +235,22 @@ class InstagramRecognitionPipeline(
                 }
 
                 failures = 0
-                if (isNonReel) {
-                    knownNonReel = true
-                    publish(
-                        state.copy(
-                            kind = ShortformContentKind.UNKNOWN,
-                            paused = true,
-                            excluded = true,
-                            reason = prediction.uiClass?.name ?: "NON_REEL_CONFIRMED"
-                        )
+                knownNonReel = false
+                val isAd = confirmedKind == ShortformContentKind.AD
+                publish(
+                    state.copy(
+                        kind = confirmedKind,
+                        paused = !countsWatchTime(confirmedKind),
+                        excluded = isAd,
+                        reason = prediction.uiClass?.name ?: confirmedKind.name
                     )
-                } else {
-                    knownNonReel = false
-                    val isAd = confirmedKind == ShortformContentKind.AD
-                    publish(
-                        state.copy(
-                            kind = confirmedKind,
-                            paused = !countsWatchTime(confirmedKind),
-                            excluded = isAd,
-                            reason = prediction.uiClass?.name ?: confirmedKind.name
-                        )
-                    )
-                }
+                )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
                 if (accepts(token)) {
                     failures++
-                    confirmation.reset()
+                    resetConfirmation()
                     publish(
                         state.copy(
                             kind = ShortformContentKind.UNKNOWN,
@@ -238,12 +268,18 @@ class InstagramRecognitionPipeline(
             token.owner == currentOwner && token.generation == generation &&
             token.contentKey == state.contentKey && state.screen == ShortformScreenState.INSIDE
 
+    private fun resetConfirmation() {
+        confirmation.reset()
+        nonReelStreak = 0
+        lastNonReelObservedAt = null
+    }
+
     private fun invalidate() {
         generation++
         job?.cancel()
         job = null
         captureSkips = 0
-        confirmation.reset()
+        resetConfirmation()
     }
 
     private fun publish(value: InstagramRecognitionState) {
@@ -260,5 +296,9 @@ class InstagramRecognitionPipeline(
         failures = 0
         captureSkips = 0
         publish(InstagramRecognitionState(generation = generation))
+    }
+
+    private companion object {
+        const val NON_REEL_CONFIRM_WINDOW_MS = 4_000L
     }
 }
