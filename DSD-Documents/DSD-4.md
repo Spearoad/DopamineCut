@@ -1,53 +1,68 @@
 # 4. 기술적 접근이나 수행 방법 및 사용할 도구
 
-본 프로젝트('DopamineCut')는 Android 클라이언트 내에서 숏폼을 감지 및 제어하는 네이티브 시스템과, 이를 기반으로 파생된 데이터를 처리하는 Web 커뮤니티 플랫폼, 그리고 실시간 동기화를 담당하는 Server/DB가 결합된 아키텍처를 채택하고 있습니다. 
+본 프로젝트('DopamineCut')는 Android 기기에서 숏폼 진입·콘텐츠 유형·영상 전환을 인식하고 시청 집계와 목표 개입을 처리하며, Firebase 서버에서 데이터 검증·동기화와 외부 AI 카테고리 분석을 수행하는 구조를 채택합니다. 웹 커뮤니티·모임 랭킹·아이템 판매는 현재 개발 범위에서 제외합니다.
 
 ## 4-1. 개발 도구 및 기술 스택
 
-각 기술 스택은 모바일 앱 본연의 모니터링 기능과 웹의 소셜/수익 창출(BM) 기능을 완벽히 분리하고, 이들을 유기적으로 연결하기 위해 선정되었습니다.
+각 기술은 기기 내 실시간 측정·개입과 비동기 서버 분석을 분리하고, 플랫폼별 변경이 공통 집계·목표 처리에 미치는 영향을 줄이기 위해 사용합니다.
 
 * **Client (Android Application)**
     * **IDE:** Android Studio
-    * **Language:** Kotlin (Min SDK 26, Target SDK 34)
-    * **핵심 라이브러리:** `AccessibilityService` (UI 구조 분석 및 화면 캡처), Kotlin Coroutines (백그라운드 비동기 처리)
-* **Web (Community Platform)**
-    * **IDE:** VS Code
-    * **Language & Framework:** React.js, JavaScript, HTML5, CSS3
-    * **핵심 기능:** `COMMUNITY_POST`, `COMMUNITY_COMMENT` 테이블과 연동하여 유저의 당일 점수에 따른 동적 폰트 사이즈 조절 및 광고(확성기) UI 렌더링.
+    * **Language:** Kotlin (Min SDK 26, Compile·Target SDK 36)
+    * **화면 구성:** Android XML·ViewBinding, MPAndroidChart 기반 통계 시각화
+    * **핵심 구성요소:** AccessibilityService (화면 상태·숏폼 진입 탐지 및 지원 환경에서의 캡처), Kotlin Coroutines (비동기 처리), DataStore·로컬 저장 (설정·집계·미전송 상태)
+* **목표·통계 및 알림 인터페이스**
+    * **목표:** 복수 목표의 저장·수정·중지·복원 및 개입 방식 선택
+    * **통계:** 기간·앱·시간/영상 수별 조회, 목표 달성 달력·시간대별 분석
+    * **알림:** 기기 내 예약·표시. 사용 습관 알림과 목표·측정 상태 안내를 구분하며, FCM 기반 그룹 알림을 전제로 하지 않음
+    * **확장 범위:** 요일별 목표·공휴일 제외·합산/개별 목표·목표 이력·상세 시간대 기록은 합의한 개선 설계이며, 구현·검증 완료 여부는 별도 확인
 * **Backend Server & Database**
-    * **Server:** Node.js (Express 프레임워크)
-    * **Database (Firebase):** Firebase Realtime Database 및 Firestore 연계
-    * **Push Notification:** Firebase Cloud Messaging (FCM)
-    * **데이터 구조 관리:** `USER`, `ROOM`, `ROOM_MEMBER`, `DOPAMINE_LOG`, `USER_INVENTORY` 등의 테이블을 관계형 및 NoSQL의 장점을 살려 혼합 설계하여 실시간 랭킹 연산 및 트랜잭션 처리.
+    * **Server:** Firebase Cloud Functions / Node.js 22·TypeScript
+    * **Database:** Cloud Firestore. 사용자 문서·목표 설정 문서·월별 일일 집계를 구분
+    * **인증 및 검증:** Firebase Authentication·App Check, 경로별 보안 규칙과 서버 입력 검증
+    * **데이터 구조 관리:** 로컬 사용량 스냅샷과 서버 버전·동기화 식별자를 사용하여 중복 전송과 충돌을 구분.
 * **AI Engine & Computer Vision**
-    * **Vision (OCR):** Google ML Kit Text Recognition API (온디바이스 기반 정제)
-    * **AI Classification:** Google Gemini API (프롬프트 기반 텍스트 분석)
+    * **CV:** ONNX Runtime Android 기반 기기 내 콘텐츠 유형 분류
+    * **OCR:** Google ML Kit Text Recognition 기반 기기 내 텍스트 추출·위치 확인
+    * **AI Classification:** Firebase Functions를 경유한 Jev 카테고리 분석 및 조건부 Gemini 대체 경로
+    * **역할 구분:** CV는 콘텐츠 유형, OCR은 텍스트 추출, 외부 AI는 의미 카테고리 분석을 담당
 * **형상 관리 및 협업 도구**
-    * Git, GitHub, VS Code Live Share
-
+    * Git, GitHub, Android Studio, VS Code
+    * 모델 검증 자료는 영상·수집 단위로 학습·평가를 분리하고, 정답 검수·입력 전처리 조건·모델 버전을 함께 관리
 ---
 
 ## 4-2. 수행 방법 및 시스템 아키텍처
 
-DopamineCut의 기능은 3장에서 정의한 핵심 모듈들의 파이프라인과 서버의 7개 테이블이 상호작용하는 형태로 수행됩니다. 전체 흐름은 다음 5단계로 나뉩니다.
+3장에서 정의한 플랫폼별 인식·공통 세션·OCR·서버 분석·저장 모듈을 다음 5단계의 역할로 구분합니다. 단계 번호는 설명 순서이며 모든 단계가 순차 완료되어야 하는 구조는 아닙니다. 
+실시간 집계·목표 판단은 OCR·서버 응답을 기다리지 않고 동작합니다.
 
 ### 단계 1: 앱별 맞춤형 숏폼 감지 및 트래킹 (Detection & Tracking)
-* **`AppManagerInterface` 기반 다형성 구현:** 플랫폼(Youtube, Instagram, Tiktok)마다 UI 노드 구조가 다르므로, 각 앱에 맞는 Manager 클래스가 `isShortformSection()`, `isAdContent()`, `getVideoIdentifier()`를 오버라이딩하여 실행 상태와 광고 여부를 판별합니다.
-* **사용 시간 및 횟수 추적:** `ViewTracker` 모듈이 백그라운드에서 타이머를 가동하여 시청 카운트를 올리며, 설정된 목표치를 초과할 경우 `AppBlockService`의 `isTimeout()`, `isCountout()`을 통해 즉각적인 차단(뒤로가기) 이벤트를 발생시킵니다.
+* **플랫폼별 화면 해석:** AppManagerInterface와 YouTube·Instagram·카카오톡의 Manager가 ScreenSnapshot으로 진입 상태·영상 식별 정보·후속 처리 명령을 제공합니다. 광고 UI 단서만으로 전체 콘텐츠 유형을 결정하지 않고 플랫폼별 기기 내 CV 판정을 연결합니다.
+* **유형별 집계:** ShortformSessionTracker가 영상 식별자와 시청 세션을 구분하여 관리합니다. 일반 숏폼은 기본 5초의 집계 조건과 목표에 따른 시청 허용 여부를 확인하여 시간·영상 수를 반영하고, 광고는 숏폼 시간·영상 수에서 제외하며, 지원되는 라이브·사진 유형은 시간만 반영합니다. 앱 전체 사용시간은 별도로 측정합니다.
+* **동일 영상 유지:** 플랫폼별 최근 집계 식별자 최대 3개를 실행 중 메모리에 보관하여 재집계를 줄입니다. 새 캡처 결과는 현재 세션·영상 전환 상태와 대조하고, 이전 영상의 지연된 결과는 새 영상에 적용하지 않습니다.
+* **실시간 목표 판단:** AppBlockService는 공통 집계·목표 정책을 연결합니다. 영상 수 목표는 다음 일반 영상의 집계 허용 여부를 먼저 확인하여, 제한된 영상을 횟수에 먼저 추가하지 않도록 합니다.
+* **변경 대응:** 진입 규칙·CV 입력 및 모델·식별·집계를 분리하여 UI 변경 시 수정 범위를 줄입니다.
 
-### 단계 2: 비가시적 텍스트 추출 및 정제 (OCR Processing)
-* **`OCRProcessor` 구동:** 숏폼 시청이 확인되면, 캡처된 화면(Bitmap)이 기기 내부의 ML Kit로 전달됩니다. `extractTextFromScreen()`을 통해 텍스트를 추출하고, `refineText()`를 호출하여 불필요한 특수문자나 공백, 무의미한 UI 텍스트를 정제하여 AI 분석의 정확도를 높입니다.
+### 단계 2: 기기 내 텍스트 추출 및 누적 (OCR Processing)
+* **수집 영역:** 일반 숏폼에서 플랫폼별 콘텐츠 영역을 캡처하고 OCRProcessor의 recognizeFrame으로 ML Kit 결과를 얻습니다.
+* **영상별 누적:** TemporalOcrCollector와 OcrTextAccumulator가 기본 1초 간격으로 새 텍스트를 누적하고 반복·불필요 공백을 정리합니다. 영상당 최대 500자에 도달하면 추가 OCR을 중지하며, 작업 시간이 길면 실제 간격은 늘어날 수 있습니다.
+* **상호작용 대응:** 댓글·공유창 등 영상 외 내용이 가려지는 동안 새 캡처·CV·OCR 작업을 정지하고 식별자·세션·누적 텍스트를 보존합니다. 이미 유형이 확정된 영상의 시청 시간은 계속 누적하는 것을 공통 기준으로 하며, 창을 닫으면 같은 영상과 연결하여 재개합니다.
+* **텍스트 확정:** 영상 전환·앱 이탈 시 해당 영상의 텍스트를 확정하여 배치 대기열에 전달합니다.
 
-### 단계 3: AI 기반 카테고리 분류 및 점수 연산 (Classification & Scoring)
-* **`GeminiCategoryClassifier` 연동:** 정제된 텍스트는 프롬프트와 함께 Gemini API로 전송되며(`requestToGemini()`), 9종의 카테고리 중 하나를 반환받습니다.
-* **개인화 패널티 적용:** `USER` 테이블의 `restriction_weights`(1~5위 위험 카테고리 가중치)를 참조하여, `applyDopamineScore()` 모듈이 도파민 점수의 차감량을 계산합니다.
+### 단계 3: 비동기 카테고리 분석 및 결과 연결 (Classification)
+* **배치 요청:** ClassificationBatchQueue가 최대 5개 영상을 묶으며, 기본 15초 대기 기한에 도달하면 부분 배치를 보냅니다. CallableBatchContentClassifier가 Firebase의 classifyShortformBatch를 호출합니다.
+* **서버 분석:** 서버는 인증·App Check·입력·사용량 한도를 검사하고, 분류 지침·카테고리 기준·OCR 텍스트를 JSON 요청 본문으로 구성하여 Jev로 전달합니다. 정해진 실패 조건에서는 Gemini 대체 경로를 사용합니다. 외부 AI의 비밀키는 서버에서 관리합니다.
+* **결과 반영:** 검증한 응답을 영상 세션에 연결하여 9종 카테고리 또는 미확인을 기록합니다.
+* **처리 범위:** 화면 이미지는 기기 내 CV·OCR에 사용하고, 외부 분석 경로에는 OCR 텍스트를 전달합니다.
 
-### 단계 4: 시스템 데이터 동기화 및 그룹 상호작용 (Sync & Gamification)
-* **DB 업데이트 로직:** 차감된 점수와 사용 기록은 `UserDataManager`의 `syncUserData()`를 통해 `USER` 테이블의 `daily_score`와 `DOPAMINE_LOG` 테이블에 즉시 기록됩니다.
-* **모임방 실시간 랭킹:** 이 데이터는 `ROOM_MEMBER` 테이블의 `current_rank`에 반영되어 같은 방(`ROOM`)에 접속 중인 유저들에게 실시간으로 공유됩니다. 
-* **찌르기 기능:** 유저가 `USER_INVENTORY` 테이블에 보유 중인 '찌르기(POKE)' 아이템을 소진하여 하위 유저를 찌르면, FCM을 통해 즉각적인 푸시 알림이 발송됩니다.
+### 단계 4: 로컬 저장 및 검증 기반 서버 동기화 (Storage & Sync)
+* **로컬 우선 처리:** DataStoreManager가 일일 UsageSnapshot과 세션 체크포인트·분류 결과를 관리합니다. 사용량 저장은 직렬화된 쓰기 경로로 연결하여 비동기 작업 간 갱신 누락·중복 반영을 줄입니다.
+* **사용량 업로드:** 기본 24시간 간격으로 미전송 스냅샷을 syncUsageBatch에 전달하고, 서버는 입력·버전·요청 식별자를 검증한 뒤 users/{uid}/months/{YYYYMM} 문서의 days.{YYYYMMDD}에 저장합니다. 앱 이탈마다 서버 increment를 호출하거나 모든 기록을 실시간 전송하는 방식이 아닙니다.
+* **재전송·충돌 처리:** 로컬 변경 버전·기준 원격 버전·데이터 요약값·동기화 식별자를 관리합니다. 동일 요청의 재전송은 중복 누적하지 않고, 다른 기기 갱신은 충돌로 구분합니다. 미전송 기록은 네트워크 복구·앱 종료 이후에도 재시도할 수 있도록 예약합니다.
+* **목표 설정 및 조회:** SyncedGoalStore는 사용량 업로드 주기와 별개로 목표 변경을 저장·동기화합니다. UserRepository는 로컬 기록을 우선 제공하되 서버 버전과 미전송 상태를 비교하여 조정하며, 로컬·서버 절대값을 단순 합산하거나 로컬과 서버 내용 중 최신 내용을 사용하도록 합니다.
 
-### 단계 5: 웹 커뮤니티 연동 및 인벤토리 비즈니스 로직 적용 (Web & BM)
-* **토큰 기반 웹 연동:** 앱 내 커뮤니티 탭 클릭 시, 유저의 UID와 `daily_score`를 파라미터로 하여 독립된 웹 브라우저 인터페이스를 호출합니다.
-* **동적 UI 제어:** 웹 서버는 전달받은 점수를 기준으로 `COMMUNITY_POST` 및 `COMMUNITY_COMMENT` 렌더링 시 유저의 글자 크기를 동적으로 제한하거나 칭호를 부여하여 시각적인 재미 요소를 더합니다.
-* **광고 시스템 모델링:** 유저가 결제를 통해 획득한 `USER_INVENTORY`의 '확성기(MEGAPHONE)' 아이템을 사용하면, 게시글 생성 시 `is_ad` 값이 TRUE로, `expired_at`이 특정 시간으로 설정됩니다. 이를 통해 당근마켓 모델처럼 피드 상단에 광고를 고정 노출하여 커뮤니티 활성화 및 BM을 실현합니다.
+### 단계 5: 목표 적용·사용 변화 확인 및 알림 (Goals & Feedback)
+* **개인별 목표:** 최초 실행 시 기본 개입 방식을 선택하고 측정 준비 후 목표 없이 기록을 시작합니다. 사용자는 숏폼 시간·영상 수·앱 사용시간을 복수로 설정하고, 기록만·알림·확인·제한 중 개입 방식을 선택합니다.
+* **일정과 적용 범위:** 요일별 다른 목표·공휴일 제외·앱 합산 또는 개별 목표를 적용하도록 설계합니다. 제외된 날짜는 목표값 0의 제한이 아니라 목표 미적용으로 처리합니다. 숏폼 목표는 일반 기능까지 일괄 차단하지 않고, 앱 사용시간 목표는 앱 전체 사용에 적용합니다.
+* **달력·시간대 분석:** 당시 목표 이력과 실제 기록으로 날짜별 달성 상태를 계산합니다. 시간대별 시간은 실제 구간을 시간·날짜 경계에 맞춰 나누고 영상 수는 집계 시각에 배치합니다.
+* **기기 내 알림:** 사용 습관 알림은 기본 08시·12시·21시 중 선택하고 조건에 맞는 내용을 최대 하루 3회 제공합니다. 목표 개입·측정 상태 안내는 별도 기준으로 관리합니다.
