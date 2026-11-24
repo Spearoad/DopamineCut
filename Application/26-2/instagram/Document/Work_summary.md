@@ -1,0 +1,13 @@
+# 인스타그램 숏폼 탐지 관련 로직 구현 요약
+
+## 1. 담당 역할 요약
+- **인스타그램 숏폼 로직 1차 구현(10월 9일)**: InstagramManager.kt 로직 구현 // InstagramDetection.kt 로직 구현 // 인스타그램 추적 분기를 추가하여 AppBlockService.kt 코드 수정
+
+- **인스타그램 숏폼 인식·집계 개선을 위한 코드 수정(11월 19~20일)**: 댓글·공유창을 열었을 때와 앱을 이탈 했을 때를 구분하기 위해 InstagramDetection.kt + InstagramManager.kt 코드 수정 // 광고가 나왔을 때, 숏폼 영상 수와 시청시간은 늘리지 않도록 InstagramRecognitionPipeline.kt 파일 내용 수정 // 화면이 다른 앱으로 바뀐 상황과 영상이 바뀐 상황을 구분하기 위해 AppBlockService.kt 코드 수정 // 사진 콘텐츠는 숏폼 영상 수는 증가하지 않지만 시청시간은 늘리도록 InstagramRecognitionPipeline.kt 코드 수정 // 숏폼 중에서 사진 콘텐츠를 감지하도록 InstagramManager.kt 코드 수정 // 인스타그램 숏폼 인식 로직 검증을 위한 테스트 진행 및 결과물(인스타그램 숏폼 인식 테스트 결과.pdf) 업로드
+
+## 2. 담당 부분 코드 수정사항 설명
+-**InstagramManager.kt** : 인스타그램 숏폼 화면 진입 여부, 콘텐츠 식별, 광고 여부, 시청 추적 상태를 관리, 숏폼 중에서 사진 콘텐츠를 감지하는 코드 추가
+-**InstagramDetection.kt** : 인스타그램 숏폼 화면 판별, 콘텐츠 식별자 생성, 시청 추적 상태 머신 구현 
+-**AppBlockService.kt** : 인스타그램 추적 분기 추가, 추적 중단 및 초기화 연동, 개발자용 진단 로깅 추가, 화면이 바뀐 상황과 영상이 바뀐 상황을 구분하는 코드 추가
+-**InstagramDetection.kt** : 댓글·공유창을 열었을 때와 앱을 이탈 했을 때를 구분하는 코드 추가
+-**InstagramRecognitionPipeline.kt** : 댓글·공유창이 열렸을 때 및 광고가 나왔을 때, 숏폼 영상 수와 시청시간은 늘리지 않도록 함. 사진 콘텐츠는 숏폼 영상 수는 증가하지 않지만 시청시간은 늘리도록 함.
